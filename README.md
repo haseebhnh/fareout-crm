@@ -1,4 +1,7 @@
-# wacrm — CRM Template for WhatsApp
+# Fareout CRM — CRM Template for WhatsApp
+
+> This is a fork of the open-source [wacrm](https://github.com/ArnasDon/wacrm)
+> project, rebranded as Fareout CRM.
 
 > Self-hostable CRM template for WhatsApp® — shared inbox, contacts,
 > sales pipelines, broadcasts, and no-code automations. Fork it, brand
@@ -18,8 +21,9 @@
 
 The marketing site and self-host docs live in a separate repo:
 [ArnasDon/wacrm-site](https://github.com/ArnasDon/wacrm-site)
-([wacrm.tech](https://wacrm.tech)). This repo is the product —
-clone or fork it to run your own CRM.
+([wacrm.tech](https://wacrm.tech) — upstream docs site; unchanged in
+this fork). This repo is the product — clone or fork it to run your
+own CRM.
 
 ## What you get out of the box
 
@@ -106,7 +110,7 @@ Dockerfile + Docker Compose setup.
   </a>
 </p>
 
-**wacrm is built to run on [Hostinger](https://www.hostinger.com/web-apps-hosting).**
+**Fareout CRM is built to run on [Hostinger](https://www.hostinger.com/web-apps-hosting).**
 It's the path we test, document, and recommend — and the fastest way
 to get a production-grade CRM live without owning a VPS or a
 Kubernetes cluster.
@@ -135,7 +139,7 @@ Kubernetes cluster.
 Full walkthrough with screenshots:
 **[wacrm.tech/docs/deployment-hostinger](https://wacrm.tech/docs/deployment-hostinger)**.
 
-> _Note: wacrm is MIT-licensed and runs anywhere Node.js does
+> _Note: Fareout CRM is MIT-licensed and runs anywhere Node.js does
 > (Vercel, Railway, your own VPS). Hostinger is recommended, not
 > required._
 

@@ -1,6 +1,6 @@
 # MCP server
 
-wacrm ships a [Model Context Protocol](https://modelcontextprotocol.io)
+Fareout CRM ships a [Model Context Protocol](https://modelcontextprotocol.io)
 server so you can drive your CRM from AI assistants — Claude Desktop,
 Claude Code, Cursor, and any other MCP client — in natural language:
 
@@ -9,7 +9,7 @@ Claude Code, Cursor, and any other MCP client — in natural language:
 > "Send the `order_update` template to that contact."
 
 It lives in [`mcp-server/`](../mcp-server) and is published to npm as
-[`wacrm-mcp`](https://www.npmjs.com/package/wacrm-mcp). Under the hood
+[`fareout-crm-mcp`](https://www.npmjs.com/package/fareout-crm-mcp). Under the hood
 it's a thin wrapper over the [public API](./public-api.md), so every
 request is authenticated and scoped by your instance exactly like any
 other API call.
@@ -24,12 +24,12 @@ other API call.
    ```jsonc
    {
      "mcpServers": {
-       "wacrm": {
+       "fareout-crm": {
          "command": "npx",
-         "args": ["-y", "wacrm-mcp"],
+         "args": ["-y", "fareout-crm-mcp"],
          "env": {
-           "WACRM_BASE_URL": "https://crm.example.com",
-           "WACRM_API_KEY": "wacrm_live_xxxxxxxxxxxxxxxxxxxxxxxx"
+           "FAREOUT_CRM_BASE_URL": "https://crm.example.com",
+           "FAREOUT_CRM_API_KEY": "fareout_crm_live_xxxxxxxxxxxxxxxxxxxxxxxx"
          }
        }
      }
@@ -37,8 +37,8 @@ other API call.
    ```
 
 That's **read-only** — the safe default. To let the assistant change
-data or send messages, add `"WACRM_ENABLE_WRITES": "true"` (and
-`"WACRM_ENABLE_BROADCASTS": "true"` for mass sends) to `env`.
+data or send messages, add `"FAREOUT_CRM_ENABLE_WRITES": "true"` (and
+`"FAREOUT_CRM_ENABLE_BROADCASTS": "true"` for mass sends) to `env`.
 
 ## What it exposes
 

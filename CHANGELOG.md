@@ -1,6 +1,6 @@
 # Changelog
 
-User-visible changes in `wacrm`. Self-hosters: when pulling an update,
+User-visible changes in `fareout-crm`. Self-hosters: when pulling an update,
 check this file for any **migration required** notes and apply the
 matching SQL files from `supabase/migrations/` against your Supabase
 project before restarting the app.
@@ -122,9 +122,9 @@ relevant excerpts are retrieved into every draft and auto-reply.
 
 Adds the **AI reply assistant** — bring-your-own-key. Each account
 pastes its own OpenAI or Anthropic key under **Settings → AI
-Assistant**; wacrm calls the provider directly with that key, so
+Assistant**; Fareout CRM calls the provider directly with that key, so
 there's no per-seat AI fee and your conversation data never leaves
-your own infrastructure for a wacrm-run service. The key is stored
+your own infrastructure for a Fareout-CRM-run service. The key is stored
 AES-256-GCM-encrypted at rest (same as WhatsApp tokens) and never
 returned to the client after saving.
 
@@ -166,7 +166,7 @@ automations can *react* to activity instead of polling.
   happens in your account — `message.received`, `message.status_updated`,
   or `conversation.created`. Manage endpoints with
   `GET/POST /api/v1/webhooks` and `GET/PATCH/DELETE /api/v1/webhooks/{id}`.
-  Each delivery is signed with an `X-Wacrm-Signature`
+  Each delivery is signed with an `X-Fareout-Crm-Signature`
   (HMAC-SHA256 over `timestamp.body`) so receivers can verify
   authenticity and reject replays; the signing secret is returned once
   at creation and stored encrypted. Delivery is best-effort — an
@@ -178,7 +178,7 @@ automations can *react* to activity instead of polling.
 
 ## [0.3.0] — 2026-07-01
 
-Multi-user accounts ship. Every wacrm install is multi-tenant on the
+Multi-user accounts ship. Every Fareout CRM install is multi-tenant on the
 database side: a single user's signup creates a fresh "account", and
 every row is scoped to that account rather than to the user directly.
 This release also opens the user-visible **Members** surface — invite
@@ -193,7 +193,7 @@ always did.
 ### Added
 
 - **Public REST API (`/api/v1`) — groundwork.** A scoped, revocable
-  **API key** system so you can drive wacrm from your own scripts and
+  **API key** system so you can drive Fareout CRM from your own scripts and
   automations. Create keys under **Settings → API keys** (admin+),
   grant only the scopes each integration needs, and authenticate with
   `Authorization: Bearer <key>`. Keys are account-scoped and stored
@@ -487,7 +487,7 @@ Apply against your Supabase project before deploying this version:
 
 ### Note on multi-user setups
 
-wacrm is intentionally **single-tenant per WhatsApp number**. RLS on
+Fareout CRM is intentionally **single-tenant per WhatsApp number**. RLS on
 `conversations`/`messages` is `auth.uid() = user_id`, so a second
 user physically cannot read messages routed to a different owner —
 two users sharing one number was never supported. If you need
