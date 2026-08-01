@@ -59,6 +59,16 @@
   --color-surface-3: var(--surface-3);
   --color-glass: var(--glass);
   --color-glass-border: var(--glass-border);
+  /* Elevation ramp from the styleguide's Level 1–5. Exposed as
+   * shadow-elev-1 … shadow-elev-5. Two stacked shadows per level: a
+   * tight contact shadow that keeps the edge crisp, plus a wide soft
+   * one for the diffuse lift. Tinted with the brand hue rather than
+   * pure black so shadows don't grey out the palette. */
+  --shadow-elev-1: var(--elev-1);
+  --shadow-elev-2: var(--elev-2);
+  --shadow-elev-3: var(--elev-3);
+  --shadow-elev-4: var(--elev-4);
+  --shadow-elev-5: var(--elev-5);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -127,7 +137,7 @@ html[data-mode="dark"] {
   /* Bumped from 0.625rem for the panel redesign — the reference shell
    * uses noticeably softer corners. Every --radius-* step scales off
    * this, so components pick the change up without edits. */
-  --radius: 0.875rem;
+  --radius: 1.25rem;
   --surface-1: oklch(0.185 0.032 210);
   --surface-2: oklch(0.254 0.044 210);
   --surface-3: oklch(0.3 0.042 210);
@@ -138,6 +148,14 @@ html[data-mode="dark"] {
   --sidebar-accent: oklch(0.3 0.042 210);
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(0.36 0.04 210);
+  /* Dark mode needs deeper, more opaque shadows than light — on a dark
+   * surface a soft black shadow is nearly invisible, so these lean on
+   * opacity to keep the elevation ramp readable. */
+  --elev-1: 0 1px 2px oklch(0.1 0.02 210 / 0.4);
+  --elev-2: 0 2px 4px oklch(0.1 0.02 210 / 0.45), 0 4px 12px oklch(0.1 0.02 210 / 0.3);
+  --elev-3: 0 4px 8px oklch(0.1 0.02 210 / 0.5), 0 8px 24px oklch(0.1 0.02 210 / 0.35);
+  --elev-4: 0 8px 16px oklch(0.1 0.02 210 / 0.55), 0 16px 40px oklch(0.1 0.02 210 / 0.4);
+  --elev-5: 0 16px 32px oklch(0.1 0.02 210 / 0.6), 0 32px 64px oklch(0.1 0.02 210 / 0.45);
 }
 
 /* Light mode is white surfaces with the brand teal standing in for
@@ -164,7 +182,7 @@ html[data-mode="light"] {
   --chart-3: oklch(0.7 0.07 205);
   --chart-4: oklch(0.8 0.05 210);
   --chart-5: oklch(0.87 0.035 210);
-  --radius: 0.875rem;
+  --radius: 1.25rem;
   --surface-1: oklch(0.975 0.004 210);
   --surface-2: oklch(1 0 0);
   --surface-3: oklch(0.985 0.003 210);
@@ -175,6 +193,13 @@ html[data-mode="light"] {
   --sidebar-accent: oklch(0.96 0.008 210);
   --sidebar-accent-foreground: oklch(0.254 0.044 210);
   --sidebar-border: oklch(0.915 0.008 210);
+  /* Light mode is where the styleguide's soft-plastic look lives: wide,
+   * low-opacity, brand-tinted shadows rather than hard grey drops. */
+  --elev-1: 0 1px 2px oklch(0.254 0.044 210 / 0.06);
+  --elev-2: 0 2px 4px oklch(0.254 0.044 210 / 0.06), 0 4px 12px oklch(0.254 0.044 210 / 0.05);
+  --elev-3: 0 4px 8px oklch(0.254 0.044 210 / 0.07), 0 8px 24px oklch(0.254 0.044 210 / 0.06);
+  --elev-4: 0 8px 16px oklch(0.254 0.044 210 / 0.08), 0 16px 40px oklch(0.254 0.044 210 / 0.07);
+  --elev-5: 0 16px 32px oklch(0.254 0.044 210 / 0.1), 0 32px 64px oklch(0.254 0.044 210 / 0.08);
 }
 
 /* ---- ACCENT: primary color ---- */
@@ -307,11 +332,18 @@ html[data-theme="rose"] {
 
 @layer components {
   .panel {
-    @apply rounded-2xl border border-border/70 bg-surface-2;
+    @apply rounded-2xl border border-border/70 bg-surface-2 shadow-elev-2;
   }
 
   .panel-glass {
-    @apply rounded-2xl border border-glass-border bg-glass backdrop-blur-xl;
+    @apply rounded-2xl border border-glass-border bg-glass shadow-elev-3 backdrop-blur-xl;
+  }
+
+  /* Pill control — the styleguide's buttons, chips, inputs and tab
+   * triggers are all fully rounded regardless of height. Applied via the
+   * primitives in components/ui rather than per call-site. */
+  .pill {
+    @apply rounded-full;
   }
 
   /* The reference's selected conversation: a primary-toned gradient with
