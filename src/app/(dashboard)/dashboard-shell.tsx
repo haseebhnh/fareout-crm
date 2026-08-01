@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
+import { MobileTabBar } from "@/components/layout/mobile-tab-bar";
 import { PresenceHeartbeat } from "@/components/presence/presence-heartbeat";
+import { useBreakpoint } from "@/hooks/use-breakpoint";
 
 // Auth-gated dashboard shell. Extracted from the layout so the layout
 // itself can stay a server component and export metadata (noindex) —
@@ -17,8 +19,16 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
 
   // Sidebar drawer state — only used on mobile. On lg+ the sidebar is
   // always visible and this stays at `false` (ignored by the component).
+  // Nav drawer state. Used on mobile (opened by the "More" tab) and on
+  // tablet (opened by the header hamburger). On desktop the sidebar is
+  // static and this stays false.
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
+  const breakpoint = useBreakpoint();
+  // `null` until hydration — see use-breakpoint. Phones are the case we
+  // must not get wrong, so the tab bar waits for a real measurement
+  // rather than rendering optimistically.
+  const isMobile = breakpoint === "mobile";
 
   useEffect(() => {
     if (!loading && !user) {
@@ -45,10 +55,15 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
           signed in. Headless — renders nothing. */}
       <PresenceHeartbeat />
       <Sidebar open={sidebarOpen} onClose={closeSidebar} />
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <Header onOpenSidebar={() => setSidebarOpen(true)} />
-        {/* Thinner horizontal padding on mobile so cards have room to breathe. */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6">{children}</main>
+        {/* Thinner horizontal padding on mobile so cards have room to breathe.
+            `min-h-0` is what lets full-height children (the inbox panes)
+            scroll internally instead of stretching this container. */}
+        <main className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 xl:p-6">
+          {children}
+        </main>
+        {isMobile && <MobileTabBar onOpenMore={() => setSidebarOpen(true)} />}
       </div>
     </div>
   );

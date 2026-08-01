@@ -106,7 +106,8 @@ const bottomNavItems = [
 ];
 
 interface SidebarProps {
-  /** Controlled on mobile by the Header's hamburger button. Ignored on lg+. */
+  /** Controlled below xl by the Header hamburger (tablet) and the mobile
+   *  tab bar's "More" tab. Ignored on desktop, where the rail is static. */
   open?: boolean;
   onClose?: () => void;
 }
@@ -159,14 +160,14 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
   return (
     <>
       {/* Backdrop — only exists on mobile and only when open. Clicking
-          it closes the drawer. Hidden from lg+ since the sidebar is
+          it closes the drawer. Hidden from xl+ since the sidebar is
           part of the main flex row there. */}
       <button
         type="button"
         aria-label={t("closeMenu")}
         onClick={onClose}
         className={cn(
-          "fixed inset-0 z-30 bg-background/70 backdrop-blur-sm transition-opacity lg:hidden",
+          "fixed inset-0 z-30 bg-background/70 backdrop-blur-sm transition-opacity xl:hidden",
           open
             ? "pointer-events-auto opacity-100"
             : "pointer-events-none opacity-0",
@@ -175,12 +176,14 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
 
       <aside
         className={cn(
-          // Mobile: fixed drawer that slides in from the left.
-          "fixed inset-y-0 left-0 z-40 flex h-full w-64 flex-col border-r border-border bg-card",
+          // Mobile + tablet: fixed drawer that slides in from the left.
+          "fixed inset-y-0 left-0 z-40 flex h-full w-64 flex-col border-r border-border bg-sidebar",
           "transition-transform duration-200 ease-out will-change-transform",
           open ? "translate-x-0" : "-translate-x-full",
-          // Desktop: static, always visible — reset all the mobile framing.
-          "lg:static lg:z-0 lg:w-60 lg:translate-x-0 lg:transition-none",
+          // Desktop (xl, 1280px+): static rail, always visible — reset all
+          // the drawer framing. The threshold matches `useBreakpoint`'s
+          // desktop cutoff so the JS shells and the CSS agree.
+          "xl:static xl:z-0 xl:w-64 xl:translate-x-0 xl:transition-none",
         )}
         aria-label="Primary"
       >
@@ -188,7 +191,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
             close button is hidden since the sidebar is always-visible. */}
         <div className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-border px-4">
           <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <div className="row-active flex h-9 w-9 items-center justify-center rounded-xl">
               <MessageSquare className="h-4 w-4" />
             </div>
             <span className="text-sm font-semibold text-foreground">
@@ -199,7 +202,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
             type="button"
             onClick={onClose}
             aria-label={t("closeMenu")}
-            className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground lg:hidden"
+            className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground xl:hidden"
           >
             <X className="h-5 w-5" />
           </button>
@@ -229,9 +232,9 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
                     href={item.href}
                     className={cn(
                       // Taller on mobile so fingers can hit the row reliably (≥44px).
-                      "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors lg:py-2",
+                      "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors xl:py-2",
                       isActive
-                        ? "bg-primary/10 text-primary"
+                        ? "row-active"
                         : "text-muted-foreground hover:bg-muted hover:text-foreground",
                     )}
                   >
@@ -257,7 +260,15 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
                     {showNotificationBadge && (
                       <span
                         aria-label={t("unreadNotifications", { count: unreadNotifications })}
-                        className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground"
+                        className={cn(
+                          "flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-semibold",
+                          // On the active row the background is already a
+                          // primary gradient, so a primary badge would
+                          // vanish into it — invert to a solid neutral.
+                          isActive
+                            ? "bg-primary-foreground text-primary"
+                            : "bg-primary text-primary-foreground",
+                        )}
                       >
                         {unreadNotifications > 9 ? "9+" : unreadNotifications}
                       </span>
@@ -278,9 +289,9 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
                   <Link
                     href={item.href}
                     className={cn(
-                      "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors lg:py-2",
+                      "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors xl:py-2",
                       isActive
-                        ? "bg-primary/10 text-primary"
+                        ? "row-active"
                         : "text-muted-foreground hover:bg-muted hover:text-foreground",
                     )}
                   >

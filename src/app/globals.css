@@ -48,6 +48,17 @@
   --color-primary-hover: var(--primary-hover);
   --color-primary-soft: var(--primary-soft);
   --color-primary-soft-2: var(--primary-soft-2);
+  /* Panel system — the 2026 shell redesign floats each pane as its own
+   * rounded surface on the app background instead of separating panes
+   * with hairline borders. `surface-1..3` is an elevation ramp (page →
+   * panel → raised control); `glass` is the translucent variant used by
+   * overlay panels (contact details, composer toolbars) that sit above
+   * scrolling content. Exposed as bg-surface-1, bg-glass, border-glass. */
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-glass: var(--glass);
+  --color-glass-border: var(--glass-border);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -108,7 +119,15 @@ html[data-mode="dark"] {
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
+  /* Bumped from 0.625rem for the panel redesign — the reference shell
+   * uses noticeably softer corners. Every --radius-* step scales off
+   * this, so components pick the change up without edits. */
+  --radius: 0.875rem;
+  --surface-1: oklch(0.13 0.01 260);
+  --surface-2: oklch(0.175 0.011 260);
+  --surface-3: oklch(0.215 0.012 260);
+  --glass: oklch(0.2 0.012 260 / 0.72);
+  --glass-border: oklch(1 0 0 / 0.08);
   --sidebar: oklch(0.16 0.01 260);
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-accent: oklch(0.22 0.01 260);
@@ -137,7 +156,12 @@ html[data-mode="light"] {
   --chart-3: oklch(0.7 0.06 260);
   --chart-4: oklch(0.8 0.04 260);
   --chart-5: oklch(0.87 0.03 260);
-  --radius: 0.625rem;
+  --radius: 0.875rem;
+  --surface-1: oklch(0.975 0.003 260);
+  --surface-2: oklch(1 0 0);
+  --surface-3: oklch(0.985 0.002 260);
+  --glass: oklch(1 0 0 / 0.78);
+  --glass-border: oklch(0.21 0.01 260 / 0.09);
   --sidebar: oklch(0.985 0.002 260);
   --sidebar-foreground: oklch(0.21 0.01 260);
   --sidebar-accent: oklch(0.96 0.004 260);
@@ -226,5 +250,56 @@ html[data-theme="rose"] {
   }
   html {
     @apply font-sans;
+  }
+}
+
+/* ============================================================
+ * PANEL PRIMITIVES
+ *
+ * The shell redesign composes every screen out of three shapes.
+ * They live here (not in a React component) because plain elements
+ * — <aside>, <nav>, list rows inside virtualised lists — need them
+ * too, and duplicating the class strings across ~130 components is
+ * exactly the drift this file exists to prevent.
+ *
+ *   .panel        an opaque pane floating on the page background
+ *   .panel-glass  the translucent variant for overlays above content
+ *   .row-active   the selected-row treatment (gradient + glow)
+ *
+ * Kept in @layer components so page-level utilities still win.
+ * ============================================================ */
+
+@layer components {
+  .panel {
+    @apply rounded-2xl border border-border/70 bg-surface-2;
+  }
+
+  .panel-glass {
+    @apply rounded-2xl border border-glass-border bg-glass backdrop-blur-xl;
+  }
+
+  /* The reference's selected conversation: a primary-toned gradient with
+   * a soft outer glow so the row reads as lifted off the list. The glow
+   * is a shadow rather than a ring so neighbouring rows don't shift. */
+  .row-active {
+    background-image: linear-gradient(
+      135deg,
+      var(--primary) 0%,
+      color-mix(in oklab, var(--primary) 72%, var(--surface-3)) 100%
+    );
+    box-shadow: 0 8px 24px -8px color-mix(in oklab, var(--primary) 55%, transparent);
+    @apply text-primary-foreground;
+  }
+}
+
+/* Respect users who ask for less motion — the shell's pane transitions
+ * and the mobile push-navigation slide are decorative. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
