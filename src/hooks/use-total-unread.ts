@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Conversation } from "@/types";
 
@@ -11,9 +11,21 @@ import type { Conversation } from "@/types";
  *
  * Lives on its own realtime channel (distinct from the inbox page's
  * "inbox-realtime") so both can coexist without sharing state.
+ *
+ * The channel topic is suffixed with a per-instance id because the hook
+ * is now mounted more than once at a time — the sidebar and the mobile
+ * tab bar both show the badge, and on phones both are mounted together.
+ * supabase-js hands back the *existing* channel for a repeated topic, so
+ * a fixed name made the second mount call `.on()` on an already
+ * subscribed channel, which throws "cannot add postgres_changes
+ * callbacks ... after subscribe()" and takes the whole shell down.
  */
 export function useTotalUnread(): number {
   const [total, setTotal] = useState(0);
+  // useId is stable across re-renders and unique per component instance,
+  // and is SSR-safe — a random value would differ between server and
+  // client and break hydration.
+  const instanceId = useId();
 
   // Keep a live local mirror of {id: unread_count} so INSERT/UPDATE/DELETE
   // events can adjust the total in O(1) without refetching.
@@ -43,7 +55,7 @@ export function useTotalUnread(): number {
     })();
 
     const channel = supabase
-      .channel("total-unread-realtime")
+      .channel(`total-unread-realtime:${instanceId}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "conversations" },
@@ -68,7 +80,7 @@ export function useTotalUnread(): number {
       cancelled = true;
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [instanceId]);
 
   return total;
 }

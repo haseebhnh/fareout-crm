@@ -566,11 +566,16 @@ function InboxPageInner() {
   const hasActiveConv = !!activeConversation;
 
   return (
-    // `h-full` rather than a hard-coded 100vh minus the header: the
-    // mobile shell now also renders a bottom tab bar below <main>, and
-    // any fixed calc() would run the panes underneath it. The negative
-    // margin cancels <main>'s padding so the panes bleed edge-to-edge.
-    <div className="-m-4 flex h-full flex-col overflow-hidden sm:-m-6">
+    // Height is measured off <main> rather than a hard-coded 100vh minus
+    // the header: the mobile shell now renders a bottom tab bar below
+    // <main>, and any fixed calc() would run the panes underneath it.
+    //
+    // The negative margin bleeds the panes over <main>'s padding, but
+    // `h-full` resolves against main's *content* box — 48px short of the
+    // padding box at sm+. Adding the padding back is what closes the dead
+    // strip that would otherwise sit under the panes. Keep the two calcs
+    // in step with <main>'s `p-4 sm:p-6`.
+    <div className="-m-4 flex h-[calc(100%+2rem)] flex-col overflow-hidden sm:-m-6 sm:h-[calc(100%+3rem)]">
       {/* WhatsApp connection banner — in the flex column, not absolute,
           so it pushes the panels down instead of overlapping them. */}
       {whatsappConnected === false && (

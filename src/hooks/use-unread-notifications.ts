@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Notification } from "@/types";
 
@@ -11,9 +11,16 @@ import type { Notification } from "@/types";
  * RLS on `notifications` already scopes every read to `auth.uid() =
  * user_id`, so no explicit filter is needed here — same pattern as
  * `useTotalUnread` for conversations.
+ *
+ * The channel topic carries a per-instance id for the same reason
+ * `useTotalUnread` does: supabase-js returns the existing channel for a
+ * repeated topic, so a second concurrent mount would call `.on()` after
+ * `.subscribe()` and throw. Only the sidebar mounts this today, but the
+ * badge is an obvious candidate for the mobile tab bar.
  */
 export function useUnreadNotifications(): number {
   const [count, setCount] = useState(0);
+  const instanceId = useId();
 
   useEffect(() => {
     const supabase = createClient();
@@ -31,7 +38,7 @@ export function useUnreadNotifications(): number {
     })();
 
     const channel = supabase
-      .channel("notifications-unread-count")
+      .channel(`notifications-unread-count:${instanceId}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "notifications" },
@@ -57,7 +64,7 @@ export function useUnreadNotifications(): number {
       cancelled = true;
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [instanceId]);
 
   return count;
 }
