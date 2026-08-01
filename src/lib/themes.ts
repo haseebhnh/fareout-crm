@@ -14,6 +14,7 @@
  */
 
 export const THEME_IDS = [
+  "brand",
   "violet",
   "emerald",
   "cobalt",
@@ -23,7 +24,7 @@ export const THEME_IDS = [
 
 export type ThemeId = (typeof THEME_IDS)[number];
 
-export const DEFAULT_THEME: ThemeId = "violet";
+export const DEFAULT_THEME: ThemeId = "brand";
 
 export const STORAGE_KEY = "fareout-crm.theme";
 
@@ -68,9 +69,19 @@ export interface ThemeMeta {
 
 export const THEMES: ReadonlyArray<ThemeMeta> = [
   {
+    id: "brand",
+    name: "Fareout",
+    tagline: "The house palette — deep teal surfaces, bright green accent.",
+    // #7ced5c. The swatch shows the *accent*, which is the green; the
+    // deep teal #00282e is carried by the dark-mode surfaces rather
+    // than by --primary (at L 0.254 it cannot serve as an accent — a
+    // button that colour is invisible against a dark background).
+    swatch: "oklch(0.849 0.211 139.4)",
+  },
+  {
     id: "violet",
     name: "Violet",
-    tagline: "The default — confident, slightly playful.",
+    tagline: "The upstream default — confident, slightly playful.",
     swatch: "oklch(0.526 0.247 293)",
   },
   {
