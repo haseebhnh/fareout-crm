@@ -554,15 +554,23 @@ function InboxPageInner() {
     [activeConversation]
   );
 
-  // On mobile (<lg) we show a SINGLE pane — either the list or the
-  // thread — rather than cramming both side-by-side. Selecting a
-  // conversation slides the thread in; the thread's back button pops
-  // it back to the list. On lg+ both panes render side-by-side as
-  // before, unchanged.
+  // Pane count per breakpoint (see use-breakpoint for the thresholds):
+  //
+  //   mobile  (<md)  ONE pane. Selecting a conversation swaps the list
+  //                  out for the thread; the thread's back button pops
+  //                  back to the list.
+  //   tablet  (md)   TWO panes — list + thread. The contact panel is
+  //                  too much for ~768px, so it stays collapsed here
+  //                  and is reachable from the thread header.
+  //   desktop (xl)   THREE panes — list + thread + contact details.
   const hasActiveConv = !!activeConversation;
 
   return (
-    <div className="-m-4 flex h-[calc(100vh-3.5rem)] flex-col overflow-hidden sm:-m-6">
+    // `h-full` rather than a hard-coded 100vh minus the header: the
+    // mobile shell now also renders a bottom tab bar below <main>, and
+    // any fixed calc() would run the panes underneath it. The negative
+    // margin cancels <main>'s padding so the panes bleed edge-to-edge.
+    <div className="-m-4 flex h-full flex-col overflow-hidden sm:-m-6">
       {/* WhatsApp connection banner — in the flex column, not absolute,
           so it pushes the panels down instead of overlapping them. */}
       {whatsappConnected === false && (
@@ -577,11 +585,12 @@ function InboxPageInner() {
       <div className="flex flex-1 overflow-hidden">
         {/* Left panel: Conversation list.
             Hidden on mobile when a conversation is selected so the
-            thread can occupy the full width. Always visible on lg+. */}
+            thread can occupy the full width. Fixed-width and always
+            visible from md+ (tablet's two-pane layout onwards). */}
         <div
           className={cn(
-            "flex h-full flex-1 lg:flex-none",
-            hasActiveConv ? "hidden lg:flex" : "flex",
+            "flex h-full flex-1 md:flex-none",
+            hasActiveConv ? "hidden md:flex" : "flex",
           )}
         >
           <ConversationList
@@ -605,8 +614,8 @@ function InboxPageInner() {
             on the right. Issue #165. */}
         <div
           className={cn(
-            "flex h-full min-w-0 flex-1 lg:flex",
-            hasActiveConv ? "flex" : "hidden lg:flex",
+            "flex h-full min-w-0 flex-1 md:flex",
+            hasActiveConv ? "flex" : "hidden md:flex",
           )}
         >
           <MessageThread
@@ -626,12 +635,14 @@ function InboxPageInner() {
           />
         </div>
 
-        {/* Right panel: Contact sidebar — desktop only, and only when the
-            agent hasn't collapsed it via the thread-header toggle (#258).
-            On mobile it's always hidden (the `lg:block` below), so the
-            toggle — which is itself desktop-only — never affects it. */}
+        {/* Right panel: Contact sidebar — the third pane, desktop only
+            (xl+), and only when the agent hasn't collapsed it via the
+            thread-header toggle (#258). Mobile and tablet hide it via
+            `xl:block`: at those widths a third column would squeeze the
+            thread below a readable measure, so the toggle — itself
+            desktop-only — never affects them. */}
         {contactPanelOpen && (
-          <div className="hidden lg:block">
+          <div className="hidden xl:block">
             <ContactSidebar contact={activeContact} />
           </div>
         )}

@@ -221,9 +221,10 @@ export function ConversationList({
 
   return (
     // w-full on mobile so the list occupies the whole viewport when it's
-    // the single pane showing; fixed 320px on desktop where it shares the
-    // row with the thread + contact sidebar.
-    <div className="flex h-full w-full flex-col border-r border-border bg-card lg:w-80">
+    // the single pane showing. From md it's a fixed column: 320px on
+    // tablet, where it shares the row with the thread only, widening to
+    // 360px on desktop once the layout has three panes to spend width on.
+    <div className="flex h-full w-full flex-col border-r border-border bg-surface-1 md:w-80 xl:w-90">
       {/* Search + Filter */}
       <div className="space-y-2 border-b border-border p-3">
         <div className="relative">
@@ -406,7 +407,9 @@ export function ConversationList({
             <p className="text-sm text-muted-foreground">{t("noConversations")}</p>
           </div>
         ) : (
-          <div className="flex flex-col">
+          // Rows are discrete cards now rather than a flush-stacked list,
+          // so the column carries the gutter and the spacing between them.
+          <div className="flex flex-col gap-1 p-2">
             {filtered.map((conv) => (
               <ConversationItem
                 key={conv.id}
@@ -453,13 +456,26 @@ function ConversationItem({
   return (
     <button
       onClick={handleClick}
+      aria-current={isActive ? "true" : undefined}
       className={cn(
-        "flex w-full items-start gap-3 px-3 py-3 text-left transition-colors hover:bg-muted/50",
-        isActive && "border-l-2 border-primary bg-muted/70"
+        "flex w-full items-start gap-3 rounded-xl p-3 text-left transition-colors",
+        isActive
+          ? "row-active"
+          : "bg-surface-2 hover:bg-surface-3",
       )}
     >
       {/* Avatar */}
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-medium text-foreground">
+      {/* Active rows sit on a primary gradient, so every piece of text and
+          chrome below flips to the inverted ramp — muted-foreground on
+          violet fails contrast badly. */}
+      <div
+        className={cn(
+          "flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-medium",
+          isActive
+            ? "bg-primary-foreground/20 text-primary-foreground"
+            : "bg-muted text-foreground",
+        )}
+      >
         {contact?.avatar_url ? (
           <img
             src={contact.avatar_url}
@@ -474,18 +490,46 @@ function ConversationItem({
       {/* Content */}
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-2">
-          <span className="truncate text-sm font-medium text-foreground">
+          <span
+            className={cn(
+              "truncate text-sm font-medium",
+              isActive ? "text-primary-foreground" : "text-foreground",
+            )}
+          >
             {displayName}
           </span>
-          <span className="shrink-0 text-[10px] text-muted-foreground">{timeAgo}</span>
+          <span
+            className={cn(
+              "shrink-0 text-[10px]",
+              isActive
+                ? "text-primary-foreground/75"
+                : "text-muted-foreground",
+            )}
+          >
+            {timeAgo}
+          </span>
         </div>
         <div className="mt-0.5 flex items-center justify-between gap-2">
-          <p className="truncate text-xs text-muted-foreground">
+          <p
+            className={cn(
+              "truncate text-xs",
+              isActive
+                ? "text-primary-foreground/80"
+                : "text-muted-foreground",
+            )}
+          >
             {conversation.last_message_text || t("noMessagesYet")}
           </p>
           <div className="flex shrink-0 items-center gap-1.5">
             {conversation.unread_count > 0 && (
-              <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+              <span
+                className={cn(
+                  "flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold",
+                  isActive
+                    ? "bg-primary-foreground text-primary"
+                    : "bg-primary text-primary-foreground",
+                )}
+              >
                 {conversation.unread_count}
               </span>
             )}
