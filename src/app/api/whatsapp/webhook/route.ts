@@ -5,6 +5,7 @@ import { getMediaUrl, downloadMedia } from '@/lib/whatsapp/meta-api'
 import { normalizePhone } from '@/lib/whatsapp/phone-utils'
 import { findExistingContact, isUniqueViolation } from '@/lib/contacts/dedupe'
 import { verifyMetaWebhookSignature } from '@/lib/whatsapp/webhook-signature'
+import { resolveAppSecretForPayload } from '@/lib/whatsapp/webhook-app-secret'
 import { runAutomationsForTrigger } from '@/lib/automations/engine'
 import { dispatchInboundToFlows } from '@/lib/flows/engine'
 import { dispatchInboundToAiReply } from '@/lib/ai/auto-reply'
@@ -175,7 +176,15 @@ export async function POST(request: Request) {
   const rawBody = await request.text()
   const signature = request.headers.get('x-hub-signature-256')
 
-  if (!verifyMetaWebhookSignature(rawBody, signature)) {
+  // Which secret verifies this payload depends on which account's number
+  // it addresses — each company may connect its own Meta app. This reads
+  // the body before it is authenticated, which is only sound because the
+  // result is used solely to *select a key*; see the contract documented
+  // on resolveAppSecretForPayload. Nothing below acts on the body until
+  // the signature check passes.
+  const appSecret = await resolveAppSecretForPayload(rawBody, supabaseAdmin())
+
+  if (!verifyMetaWebhookSignature(rawBody, signature, appSecret)) {
     // 401 (not 200) — we want Meta's delivery dashboard to show failures
     // loudly if a misconfiguration causes signatures to stop matching,
     // rather than silently eating events.
