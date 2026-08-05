@@ -757,9 +757,14 @@ export function MessageThread({
   // The "toggle" semantic (pill click) is computed at the call site where the
   // current reactions for the bubble are already in scope — keeps this
   // function dependency-free w.r.t. the reaction list.
+  // Hoisted out of the callback: declaring `user?.id` as the dependency
+  // while closing over `user` is narrower than what React Compiler
+  // infers, so it refuses to preserve the memo. Closing over the
+  // primitive makes the declared and inferred dependencies agree.
+  const currentUserId = user?.id;
   const postReaction = useCallback(
     async (messageId: string, emoji: string) => {
-      if (!user?.id || !conversation) {
+      if (!currentUserId || !conversation) {
         console.warn("[reactions] missing user or conversation");
         return;
       }
@@ -769,7 +774,7 @@ export function MessageThread({
       }
 
       const convId = conversation.id;
-      const userId = user.id;
+      const userId = currentUserId;
       let snapshot: MessageReaction[] = [];
 
       // Functional updater — captures the freshest reactions list, never a
@@ -814,7 +819,7 @@ export function MessageThread({
         setReactions(snapshot);
       }
     },
-    [conversation, user?.id],
+    [conversation, currentUserId],
   );
 
   const handleAssignChange = useCallback(

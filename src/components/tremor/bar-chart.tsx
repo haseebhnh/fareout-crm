@@ -170,8 +170,16 @@ const ScrollButton = ({ icon, onClick, disabled }: ScrollButtonProps) => {
   const [isPressed, setIsPressed] = React.useState(false)
   const intervalRef = React.useRef<NodeJS.Timeout | null>(null)
 
+  // "Pressed while disabled" is a contradiction, so it is derived rather
+  // than corrected after the fact. Previously a second effect watched
+  // `disabled` and called setIsPressed(false) — a cascading render, and
+  // one that let a single repeat fire between the button being disabled
+  // and the effect clearing the interval. Deriving closes that window:
+  // the interval effect below sees `pressed` flip in the same pass.
+  const pressed = isPressed && !disabled
+
   React.useEffect(() => {
-    if (isPressed) {
+    if (pressed) {
       intervalRef.current = setInterval(() => {
         onClick?.()
       }, 300)
@@ -179,14 +187,7 @@ const ScrollButton = ({ icon, onClick, disabled }: ScrollButtonProps) => {
       clearInterval(intervalRef.current as NodeJS.Timeout)
     }
     return () => clearInterval(intervalRef.current as NodeJS.Timeout)
-  }, [isPressed, onClick])
-
-  React.useEffect(() => {
-    if (disabled) {
-      clearInterval(intervalRef.current as NodeJS.Timeout)
-      setIsPressed(false)
-    }
-  }, [disabled])
+  }, [pressed, onClick])
 
   return (
     <button

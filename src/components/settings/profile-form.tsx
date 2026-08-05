@@ -46,11 +46,19 @@ export function ProfileForm() {
   const [emailChangePending, setEmailChangePending] = useState(false);
 
   // Seed form state once the profile loads.
-  useEffect(() => {
-    if (!profile) return;
+  //
+  // Adjusted during render rather than in an effect: an effect would
+  // paint empty inputs first and fill them on a second pass, and React
+  // Compiler rejects setState in an effect body. Keyed on the profile
+  // object identity, so a refreshProfile() round-trip reseeds the form
+  // exactly as the previous effect did — but without the flash of
+  // empty fields.
+  const [seededProfile, setSeededProfile] = useState<typeof profile>(null);
+  if (profile && seededProfile !== profile) {
+    setSeededProfile(profile);
     setFullName(profile.full_name ?? '');
     setEmail(profile.email ?? '');
-  }, [profile]);
+  }
 
   // Cleanup object URLs to avoid leaks.
   useEffect(() => {

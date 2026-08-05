@@ -70,17 +70,31 @@ export function ContactForm({
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [loadingTags, setLoadingTags] = useState(false);
 
-  useEffect(() => {
-    if (open) {
-      setName(contact?.name ?? '');
-      setPhone(contact?.phone ?? '');
-      setEmail(contact?.email ?? '');
-      setCompany(contact?.company ?? '');
-      setSelectedTagIds(contactTags.map((ct) => ct.tag_id));
-      setDupMatch(null);
-      fetchTags();
-    }
-  }, [open, contact]);
+  // Seed the fields each time the dialog opens, or when it is reopened
+  // against a different contact.
+  //
+  // Done during render rather than in an effect: an effect painted the
+  // previous contact's values for one frame before overwriting them,
+  // which was visible when switching straight from one contact to
+  // another. Tracking the (open, contact) pair we last seeded from
+  // reproduces the old trigger condition exactly — including reseeding
+  // when the same dialog is reopened after closing.
+  const seedKey = open ? (contact?.id ?? 'new') : null;
+  const [seededFor, setSeededFor] = useState<string | null>(null);
+  if (seedKey !== null && seedKey !== seededFor) {
+    setSeededFor(seedKey);
+    setName(contact?.name ?? '');
+    setPhone(contact?.phone ?? '');
+    setEmail(contact?.email ?? '');
+    setCompany(contact?.company ?? '');
+    setSelectedTagIds(contactTags.map((ct) => ct.tag_id));
+    setDupMatch(null);
+  } else if (seedKey === null && seededFor !== null) {
+    // Closed — forget what we seeded so the next open reseeds even if
+    // it is the same contact.
+    setSeededFor(null);
+  }
+
 
   // Look up an existing contact with this number (new contacts only).
   // Runs on blur so we don't query on every keystroke.
@@ -113,6 +127,15 @@ export function ContactForm({
     if (data) setTags(data);
     setLoadingTags(false);
   }
+
+  // The tag list is a network read, so unlike the field seeding above it
+  // stays in an effect. Declared after fetchTags deliberately: a function
+  // declaration referenced from an effect above its own definition reads
+  // as a stale binding to the compiler.
+  useEffect(() => {
+    if (open) fetchTags();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   function toggleTag(tagId: string) {
     setSelectedTagIds((prev) =>

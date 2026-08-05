@@ -309,10 +309,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.location.href = "/login";
   }, []);
 
+  // Depends on `user`, not `user?.id`. React Compiler infers the whole
+  // object as the dependency and refuses to preserve a memo whose
+  // declared deps are narrower than the inferred ones — a narrower dep
+  // means the callback can hold a stale closure over `user` when the
+  // object is replaced but its id is unchanged (a token refresh does
+  // exactly that). Reading `id` into a local keeps the closure over a
+  // primitive so the identity of `user` is all that matters.
+  const userId = user?.id;
   const refreshProfile = useCallback(async () => {
-    if (!user?.id) return;
-    await fetchProfile(user.id);
-  }, [user?.id, fetchProfile]);
+    if (!userId) return;
+    await fetchProfile(userId);
+  }, [userId, fetchProfile]);
 
   // Derive the role booleans once per profile change rather than on
   // every consumer render. Cheap regardless, but the memo also gives

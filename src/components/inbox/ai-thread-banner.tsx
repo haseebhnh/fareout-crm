@@ -86,7 +86,18 @@ export function AiThreadBanner({
   // instantly on click; re-seeds whenever the thread (or its server
   // state via realtime) changes.
   const [paused, setPaused] = useState(disabled);
-  useEffect(() => setPaused(disabled), [conversationId, disabled]);
+  // Re-seeded during render rather than in an effect: an effect showed
+  // the previous thread's pause state for one frame when switching
+  // conversations, and React Compiler rejects setState in an effect
+  // body. Keyed on both inputs so it still re-seeds when the server
+  // state changes via realtime on the *same* thread, matching the old
+  // dependency array exactly.
+  const pauseSeed = `${conversationId}:${disabled}`;
+  const [prevPauseSeed, setPrevPauseSeed] = useState(pauseSeed);
+  if (prevPauseSeed !== pauseSeed) {
+    setPrevPauseSeed(pauseSeed);
+    setPaused(disabled);
+  }
 
   useEffect(() => {
     if (!accountId) return;

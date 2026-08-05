@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Coins, Loader2 } from "lucide-react";
 
@@ -44,9 +44,19 @@ export function DealsSettings() {
 
   // Keep the select in sync once the profile (and its account default)
   // resolves, and after a save round-trips through refreshProfile.
-  useEffect(() => {
+  //
+  // Adjusted during render rather than in an effect. An effect would
+  // paint the stale currency first and correct it on a second pass —
+  // a visible flicker — and React Compiler rejects setState in an
+  // effect body outright. This is React's documented pattern for
+  // "reset state when a prop changes": compare against the previous
+  // value and set both in the same render.
+  const [prevDefaultCurrency, setPrevDefaultCurrency] =
+    useState(defaultCurrency);
+  if (prevDefaultCurrency !== defaultCurrency) {
+    setPrevDefaultCurrency(defaultCurrency);
     setSelected(defaultCurrency);
-  }, [defaultCurrency]);
+  }
 
   const dirty = selected !== defaultCurrency;
 
