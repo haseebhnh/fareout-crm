@@ -12,19 +12,27 @@ import {
 /**
  * The channel catalog — every inbound source a company can connect.
  *
- * Today exactly one channel is implemented end to end (WhatsApp). This
- * module exists so the others are represented *honestly*: the Channels
- * page reads from here, so a channel that is not built shows as
- * "Planned" rather than offering a Connect button that leads nowhere.
+ * WhatsApp, Instagram and Messenger are implemented end to end, plus
+ * the public API for external systems. This module exists so the
+ * remainder are represented *honestly*: the Channels page reads from
+ * here, so a channel that is not built shows as "Planned" rather than
+ * offering a Connect button that leads nowhere.
  *
- * ## Why the rest are not built yet
+ * ## What unblocked the Meta channels
  *
- * `conversations` and `messages` are modelled around WhatsApp — a
- * conversation is keyed to a phone number, and the inbox, automations,
- * broadcasts and AI assistant all assume that. Adding a second channel
- * means introducing a channel dimension underneath all of it. That
- * refactor is the real cost; each channel after it is comparatively
- * cheap, which is why `effort` below is relative to it.
+ * Migration 038 introduced the channel dimension: conversations carry a
+ * `channel`, uniqueness moved to (account, contact, channel),
+ * contacts.phone became nullable, and `channel_identities` maps an
+ * external id to a contact so one person across several channels is one
+ * customer. Instagram and Messenger then reused the Meta webhook and
+ * Graph client WhatsApp already had.
+ *
+ * ## Why the rest are still planned
+ *
+ * They need infrastructure the app does not have, not schema. Website
+ * chat needs a hosted widget and our own realtime transport; email
+ * needs an inbound provider and MIME parsing; Google Reviews is not a
+ * conversation at all. None of them reuse the Meta plumbing.
  *
  * When a channel ships, flip its `status` to 'available'. Nothing else
  * needs to change — the page renders off this list.
@@ -64,16 +72,16 @@ export const CHANNELS: ReadonlyArray<ChannelMeta> = [
     name: 'Instagram DMs',
     description: 'Direct messages and story replies land in the same inbox.',
     icon: Camera,
-    status: 'planned',
-    note: 'Reuses the Meta Graph plumbing WhatsApp already uses, so it is the cheapest channel to add after the shared conversation model exists. Needs Meta app review.',
+    status: 'available',
+    note: 'Connect your Instagram business account ID and a Page access token with instagram_manage_messages. Point the Meta webhook at the same callback URL WhatsApp uses.',
   },
   {
     id: 'messenger',
     name: 'Facebook Messenger',
     description: 'Page messages routed to agents alongside WhatsApp.',
     icon: MessagesSquare,
-    status: 'planned',
-    note: 'Same Meta webhook shape as Instagram; the two are usually built together.',
+    status: 'available',
+    note: 'Connect your Facebook Page ID and a Page access token with pages_messaging. Uses the same callback URL as WhatsApp and Instagram.',
   },
   {
     id: 'website',

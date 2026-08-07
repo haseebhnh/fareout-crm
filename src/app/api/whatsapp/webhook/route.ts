@@ -6,6 +6,11 @@ import { normalizePhone } from '@/lib/whatsapp/phone-utils'
 import { findExistingContact, isUniqueViolation } from '@/lib/contacts/dedupe'
 import { verifyMetaWebhookSignature } from '@/lib/whatsapp/webhook-signature'
 import { resolveAppSecretForPayload } from '@/lib/whatsapp/webhook-app-secret'
+import {
+  extractMetaMessages,
+  persistInboundMetaMessage,
+  type MetaChannel,
+} from '@/lib/channels/meta-messaging'
 import { runAutomationsForTrigger } from '@/lib/automations/engine'
 import { dispatchInboundToFlows } from '@/lib/flows/engine'
 import { dispatchInboundToAiReply } from '@/lib/ai/auto-reply'
@@ -226,6 +231,14 @@ export async function POST(request: Request) {
 
 async function processWebhook(body: { entry?: WhatsAppWebhookEntry[] }) {
   if (!body.entry) return
+
+  // Instagram and Messenger arrive on this same endpoint (one Meta app,
+  // one callback URL) but with a different payload shape: `messaging[]`
+  // events rather than `changes[].value.messages`. Handle those first
+  // and return — the WhatsApp branches below read fields that a
+  // messaging event does not have.
+  const metaHandled = await processMetaMessagingEvents(body)
+  if (metaHandled) return
 
   for (const entry of body.entry) {
     for (const change of entry.changes) {
@@ -1127,4 +1140,52 @@ async function findOrCreateConversation(
   }
 
   return { conversation: newConv, created: true }
+}
+
+/**
+ * Handle Instagram / Messenger deliveries.
+ *
+ * Meta sends every channel of one app to the same callback URL, so this
+ * endpoint is shared. The two are told apart by the `object` field:
+ * "instagram" vs "page". WhatsApp uses "whatsapp_business_account" and
+ * falls through to the existing handler untouched.
+ *
+ * Returns true when the payload was a messaging event (handled here),
+ * false when it belongs to the WhatsApp path.
+ */
+async function processMetaMessagingEvents(body: unknown): Promise<boolean> {
+  const objectType = (body as { object?: unknown })?.object
+  const channel: MetaChannel | null =
+    objectType === 'instagram'
+      ? 'instagram'
+      : objectType === 'page'
+        ? 'messenger'
+        : null
+
+  if (!channel) return false
+
+  const messages = extractMetaMessages(body, channel)
+  // A `page`/`instagram` payload with no messaging events is still ours
+  // — a delivery receipt or read receipt. Returning true stops the
+  // WhatsApp handler from trying to read message-shaped fields off it.
+  if (messages.length === 0) return true
+
+  const db = supabaseAdmin()
+  for (const message of messages) {
+    try {
+      const result = await persistInboundMetaMessage(db, message)
+      if (!result.persisted && result.reason === 'no_connection') {
+        console.warn(
+          `[webhook] ${channel} message for unconnected account:`,
+          message.recipientId,
+        )
+      }
+    } catch (error) {
+      // One bad message must not abort the batch — Meta would retry the
+      // whole delivery and duplicate the ones that did land.
+      console.error(`[webhook] failed to persist ${channel} message:`, error)
+    }
+  }
+
+  return true
 }
