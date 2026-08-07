@@ -134,6 +134,46 @@ const nextConfig: NextConfig = {
    * they apply to every response regardless of which cache rule
    * matched.
    */
+  /**
+   * Legacy-host redirect: crm.fareouttravel.com → app.ootrix.com.
+   *
+   * Both hostnames serve this same app (app.ootrix.com is parked on the
+   * crm vhost), so this is purely about consolidating on one canonical
+   * URL.
+   *
+   * `/api/*` is deliberately NOT redirected, and that exclusion is
+   * load-bearing rather than tidiness:
+   *
+   *   - Meta's webhook posts to the callback URL registered in the app
+   *     dashboard, which is still the crm host. Webhook deliveries are
+   *     POSTs carrying an x-hub-signature-256 over the raw body. A 301
+   *     would at best force a re-POST to a different origin and at worst
+   *     be dropped outright — Meta does not reliably follow redirects —
+   *     and every delivery would be lost silently.
+   *   - The public API at /api/v1 is called by external systems with
+   *     hard-coded base URLs. Many HTTP clients drop the Authorization
+   *     header when following a cross-host redirect, so those callers
+   *     would start 401ing.
+   *
+   * So the API surface keeps answering on the old host indefinitely.
+   * Once the Meta callback URL and any API consumers are repointed at
+   * app.ootrix.com, this whole block can go.
+   *
+   * `permanent: false` (307) on purpose: a 301 is cached by browsers
+   * essentially forever, which is painful to undo if the domain plan
+   * changes again. Revisit once the new host has proven itself.
+   */
+  async redirects() {
+    return [
+      {
+        source: "/:path((?!api/).*)",
+        has: [{ type: "host", value: "crm.fareouttravel.com" }],
+        destination: "https://app.ootrix.com/:path",
+        permanent: false,
+      },
+    ];
+  },
+
   async headers() {
     return [
       {
