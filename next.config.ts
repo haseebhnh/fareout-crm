@@ -171,6 +171,23 @@ const nextConfig: NextConfig = {
         destination: "https://app.ootrix.com/:path",
         permanent: false,
       },
+      {
+        /**
+         * One deployment serves two products: the marketing site on the
+         * apex, the CRM on app.*. Now that `/` renders the landing page,
+         * someone opening app.ootrix.com would get marketing instead of
+         * their inbox — so the app host sends the root straight into the
+         * product. `/dashboard` bounces to `/login` when signed out,
+         * which is the pre-existing behaviour of the old root redirect.
+         *
+         * Only the bare root is matched; every other path on the app
+         * host is a real app route and must pass through untouched.
+         */
+        source: "/",
+        has: [{ type: "host", value: "app.ootrix.com" }],
+        destination: "/dashboard",
+        permanent: false,
+      },
     ];
   },
 
