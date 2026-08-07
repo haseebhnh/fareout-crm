@@ -198,6 +198,31 @@ const nextConfig: NextConfig = {
         headers: [{ key: "Cache-Control", value: "no-store" }],
       },
       {
+        /**
+         * The root is the one path whose response depends on the Host:
+         * the apex renders the marketing page, app.* redirects into the
+         * product. Hostinger's CDN was caching `/` without varying on
+         * Host, so a single entry was shared between both hostnames and
+         * whichever host hit an edge node first won — app.ootrix.com
+         * flapped between the redirect and the landing page depending
+         * on which node served it.
+         *
+         * `Vary: Host` states the dependency for caches that honour it;
+         * `private` is the belt-and-braces that keeps `/` out of shared
+         * caches entirely for those that don't. Browsers still cache it
+         * per-origin, so the cost is one origin hit per visitor rather
+         * than a slower page.
+         *
+         * Scoped to exactly `/` — every other route is host-independent
+         * and keeps the s-maxage policy below.
+         */
+        source: "/",
+        headers: [
+          { key: "Vary", value: "Host" },
+          { key: "Cache-Control", value: "private, max-age=0, must-revalidate" },
+        ],
+      },
+      {
         source: "/:path((?!_next/static|_next/image|api).*)",
         headers: [
           {
