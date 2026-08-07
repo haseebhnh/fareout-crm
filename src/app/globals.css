@@ -315,6 +315,32 @@ html[data-theme="rose"] {
 }
 
 /* ============================================================
+ * OOTRIX MARKETING BRAND
+ *
+ * Scoped to [data-brand="ootrix"] rather than :root on purpose. The
+ * marketing site and the CRM are one Next app but two visual systems —
+ * the app runs the product theme (accent-swappable, light/dark), while
+ * the marketing site is a fixed, always-light brand surface. Scoping
+ * keeps a change to one from silently restyling the other.
+ *
+ * Values are the brand sheet verbatim; do not re-derive them.
+ * ============================================================ */
+
+[data-brand="ootrix"] {
+  --oo-ink: #081b4b;
+  --oo-primary: #0a2f9c;
+  --oo-secondary: #1e90ff;
+  --oo-accent: #ffc107;
+  --oo-surface: #ffffff;
+  --oo-muted: #f2f4f7;
+  /* Derived, and only these: a hairline border and two text tints that
+   * stay in the ink hue instead of drifting to neutral grey. */
+  --oo-border: color-mix(in oklab, var(--oo-ink) 12%, transparent);
+  --oo-text-soft: color-mix(in oklab, var(--oo-ink) 68%, transparent);
+  --oo-text-faint: color-mix(in oklab, var(--oo-ink) 48%, transparent);
+}
+
+/* ============================================================
  * PANEL PRIMITIVES
  *
  * The shell redesign composes every screen out of three shapes.
@@ -344,6 +370,30 @@ html[data-theme="rose"] {
    * primitives in components/ui rather than per call-site. */
   .pill {
     @apply rounded-full;
+  }
+
+  /* Scroll-reveal. The element is offset and transparent until a
+   * `data-shown` attribute is set by the Reveal component's
+   * IntersectionObserver.
+   *
+   * Deliberately not `animation-timeline: view()` — that is still
+   * Chromium-only, and a marketing page silently rendering blank
+   * content in Safari or Firefox is the worst possible failure mode
+   * for the one page whose entire job is first impressions.
+   *
+   * The global prefers-reduced-motion block below collapses the
+   * transition to ~0s, and because the shown state is an attribute
+   * rather than an animation, content still ends up visible. */
+  .reveal {
+    opacity: 0;
+    transform: translateY(18px);
+    transition:
+      opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+      transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .reveal[data-shown="true"] {
+    opacity: 1;
+    transform: none;
   }
 
   /* The reference's selected conversation: a primary-toned gradient with
