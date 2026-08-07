@@ -44,7 +44,7 @@ export const MODES = ["light", "dark"] as const;
 
 export type Mode = (typeof MODES)[number];
 
-export const DEFAULT_MODE: Mode = "dark";
+export const DEFAULT_MODE: Mode = "light";
 
 export const MODE_STORAGE_KEY = "fareout-crm.mode";
 
@@ -70,13 +70,13 @@ export interface ThemeMeta {
 export const THEMES: ReadonlyArray<ThemeMeta> = [
   {
     id: "brand",
-    name: "Fareout",
-    tagline: "The house palette — deep teal surfaces, bright green accent.",
-    // #7ced5c. The swatch shows the *accent*, which is the green; the
-    // deep teal #00282e is carried by the dark-mode surfaces rather
-    // than by --primary (at L 0.254 it cannot serve as an accent — a
-    // button that colour is invisible against a dark background).
-    swatch: "oklch(0.849 0.211 139.4)",
+    name: "OOTRIX",
+    tagline: "The house palette — deep brand blue on white, gold for emphasis.",
+    // #0A2F9C — the brand primary, and genuinely usable as an accent in
+    // both modes. The gold #FFC107 is deliberately not shown here: it is
+    // a highlight colour that must always pair with ink, never a
+    // --primary whose foreground is white.
+    swatch: "oklch(0.369 0.18 264.2)",
   },
   {
     id: "violet",

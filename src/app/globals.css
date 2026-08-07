@@ -107,130 +107,134 @@
 
 /* ---- MODE: neutral surfaces ---- */
 
-/* Dark surfaces are built around the brand teal #00282e =
- * oklch(0.254 0.044 210). --card lands exactly on it; --background sits
- * a step below so panels read as lifted, and --surface-3 a step above
- * for raised controls. Hue 210 with low chroma keeps the teal legible as
- * brand colour without tinting body text. */
+/* Dark surfaces are built around the OOTRIX ink #081B4B =
+ * oklch(0.243 0.093 264). --card lands on it; --background sits a step
+ * below so panels read as lifted, and --surface-3 a step above for
+ * raised controls. Hue 264 matches the primary, so the neutrals read as
+ * the same family rather than a grey the brand sits on top of. Chroma
+ * is held low enough that body text stays neutral. */
 :root,
 html[data-mode="dark"] {
-  --background: oklch(0.185 0.032 210);
+  --background: oklch(0.175 0.058 264);
   --foreground: oklch(0.985 0 0);
-  --card: oklch(0.254 0.044 210);
-  --card-2: oklch(0.3 0.042 210);
+  --card: oklch(0.243 0.07 264);
+  --card-2: oklch(0.295 0.065 264);
   --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.254 0.044 210);
+  --popover: oklch(0.243 0.07 264);
   --popover-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.3 0.042 210);
+  --secondary: oklch(0.295 0.065 264);
   --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.3 0.042 210);
-  --muted-foreground: oklch(0.72 0.028 210);
-  --accent: oklch(0.3 0.042 210);
+  --muted: oklch(0.295 0.065 264);
+  --muted-foreground: oklch(0.73 0.035 264);
+  --accent: oklch(0.295 0.065 264);
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.36 0.04 210);
-  --input: oklch(0.36 0.04 210);
-  --chart-2: oklch(0.72 0.12 190);
-  --chart-3: oklch(0.6 0.08 200);
-  --chart-4: oklch(0.48 0.06 205);
-  --chart-5: oklch(0.36 0.05 210);
+  --border: oklch(0.36 0.055 264);
+  --input: oklch(0.36 0.055 264);
+  --chart-2: oklch(0.652 0.19 253.2);
+  --chart-3: oklch(0.58 0.12 258);
+  --chart-4: oklch(0.47 0.09 261);
+  --chart-5: oklch(0.36 0.07 264);
   /* Bumped from 0.625rem for the panel redesign — the reference shell
    * uses noticeably softer corners. Every --radius-* step scales off
    * this, so components pick the change up without edits. */
   --radius: 1.25rem;
-  --surface-1: oklch(0.185 0.032 210);
-  --surface-2: oklch(0.254 0.044 210);
-  --surface-3: oklch(0.3 0.042 210);
-  --glass: oklch(0.254 0.044 210 / 0.72);
+  --surface-1: oklch(0.175 0.058 264);
+  --surface-2: oklch(0.243 0.07 264);
+  --surface-3: oklch(0.295 0.065 264);
+  --glass: oklch(0.243 0.07 264 / 0.72);
   --glass-border: oklch(1 0 0 / 0.08);
-  --sidebar: oklch(0.215 0.038 210);
+  --sidebar: oklch(0.208 0.062 264);
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.3 0.042 210);
+  --sidebar-accent: oklch(0.295 0.065 264);
   --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.36 0.04 210);
+  --sidebar-border: oklch(0.36 0.055 264);
   /* Dark mode needs deeper, more opaque shadows than light — on a dark
    * surface a soft black shadow is nearly invisible, so these lean on
    * opacity to keep the elevation ramp readable. */
-  --elev-1: 0 1px 2px oklch(0.1 0.02 210 / 0.4);
-  --elev-2: 0 2px 4px oklch(0.1 0.02 210 / 0.45), 0 4px 12px oklch(0.1 0.02 210 / 0.3);
-  --elev-3: 0 4px 8px oklch(0.1 0.02 210 / 0.5), 0 8px 24px oklch(0.1 0.02 210 / 0.35);
-  --elev-4: 0 8px 16px oklch(0.1 0.02 210 / 0.55), 0 16px 40px oklch(0.1 0.02 210 / 0.4);
-  --elev-5: 0 16px 32px oklch(0.1 0.02 210 / 0.6), 0 32px 64px oklch(0.1 0.02 210 / 0.45);
+  --elev-1: 0 1px 2px oklch(0.12 0.05 264 / 0.4);
+  --elev-2: 0 2px 4px oklch(0.12 0.05 264 / 0.45), 0 4px 12px oklch(0.12 0.05 264 / 0.3);
+  --elev-3: 0 4px 8px oklch(0.12 0.05 264 / 0.5), 0 8px 24px oklch(0.12 0.05 264 / 0.35);
+  --elev-4: 0 8px 16px oklch(0.12 0.05 264 / 0.55), 0 16px 40px oklch(0.12 0.05 264 / 0.4);
+  --elev-5: 0 16px 32px oklch(0.12 0.05 264 / 0.6), 0 32px 64px oklch(0.12 0.05 264 / 0.45);
 }
 
-/* Light mode is white surfaces with the brand teal standing in for
- * black — #00282e as body text rather than a neutral grey, so the
- * palette stays on-brand in both modes. */
+/* Light mode is the brand's own surface: #FFFFFF background, #081B4B as
+ * body text rather than a neutral grey, and #F2F4F7 for muted fills —
+ * the exact values from the brand sheet, so the app and the marketing
+ * site read as one product. */
 html[data-mode="light"] {
-  --background: oklch(0.99 0.002 210);
-  --foreground: oklch(0.254 0.044 210);
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.243 0.093 264.1);
   --card: oklch(1 0 0);
-  --card-2: oklch(0.985 0.003 210);
-  --card-foreground: oklch(0.254 0.044 210);
+  --card-2: oklch(0.966 0.005 258.3);
+  --card-foreground: oklch(0.243 0.093 264.1);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.254 0.044 210);
-  --secondary: oklch(0.967 0.006 210);
-  --secondary-foreground: oklch(0.254 0.044 210);
-  --muted: oklch(0.967 0.006 210);
-  --muted-foreground: oklch(0.5 0.025 210);
-  --accent: oklch(0.96 0.008 210);
-  --accent-foreground: oklch(0.254 0.044 210);
+  --popover-foreground: oklch(0.243 0.093 264.1);
+  --secondary: oklch(0.966 0.005 258.3);
+  --secondary-foreground: oklch(0.243 0.093 264.1);
+  --muted: oklch(0.966 0.005 258.3);
+  --muted-foreground: oklch(0.52 0.045 264);
+  --accent: oklch(0.955 0.01 258);
+  --accent-foreground: oklch(0.243 0.093 264.1);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.915 0.008 210);
-  --input: oklch(0.915 0.008 210);
-  --chart-2: oklch(0.6 0.1 200);
-  --chart-3: oklch(0.7 0.07 205);
-  --chart-4: oklch(0.8 0.05 210);
-  --chart-5: oklch(0.87 0.035 210);
+  --border: oklch(0.912 0.012 258);
+  --input: oklch(0.912 0.012 258);
+  --chart-2: oklch(0.652 0.19 253.2);
+  --chart-3: oklch(0.72 0.13 250);
+  --chart-4: oklch(0.81 0.09 248);
+  --chart-5: oklch(0.88 0.06 250);
   --radius: 1.25rem;
-  --surface-1: oklch(0.975 0.004 210);
+  --surface-1: oklch(0.966 0.005 258.3);
   --surface-2: oklch(1 0 0);
-  --surface-3: oklch(0.985 0.003 210);
+  --surface-3: oklch(0.985 0.004 258);
   --glass: oklch(1 0 0 / 0.78);
-  --glass-border: oklch(0.254 0.044 210 / 0.1);
-  --sidebar: oklch(0.985 0.003 210);
-  --sidebar-foreground: oklch(0.254 0.044 210);
-  --sidebar-accent: oklch(0.96 0.008 210);
-  --sidebar-accent-foreground: oklch(0.254 0.044 210);
-  --sidebar-border: oklch(0.915 0.008 210);
+  --glass-border: oklch(0.243 0.093 264.1 / 0.1);
+  --sidebar: oklch(0.985 0.004 258);
+  --sidebar-foreground: oklch(0.243 0.093 264.1);
+  --sidebar-accent: oklch(0.955 0.01 258);
+  --sidebar-accent-foreground: oklch(0.243 0.093 264.1);
+  --sidebar-border: oklch(0.912 0.012 258);
   /* Light mode is where the styleguide's soft-plastic look lives: wide,
    * low-opacity, brand-tinted shadows rather than hard grey drops. */
-  --elev-1: 0 1px 2px oklch(0.254 0.044 210 / 0.06);
-  --elev-2: 0 2px 4px oklch(0.254 0.044 210 / 0.06), 0 4px 12px oklch(0.254 0.044 210 / 0.05);
-  --elev-3: 0 4px 8px oklch(0.254 0.044 210 / 0.07), 0 8px 24px oklch(0.254 0.044 210 / 0.06);
-  --elev-4: 0 8px 16px oklch(0.254 0.044 210 / 0.08), 0 16px 40px oklch(0.254 0.044 210 / 0.07);
-  --elev-5: 0 16px 32px oklch(0.254 0.044 210 / 0.1), 0 32px 64px oklch(0.254 0.044 210 / 0.08);
+  --elev-1: 0 1px 2px oklch(0.243 0.093 264 / 0.06);
+  --elev-2: 0 2px 4px oklch(0.243 0.093 264 / 0.06), 0 4px 12px oklch(0.243 0.093 264 / 0.05);
+  --elev-3: 0 4px 8px oklch(0.243 0.093 264 / 0.07), 0 8px 24px oklch(0.243 0.093 264 / 0.06);
+  --elev-4: 0 8px 16px oklch(0.243 0.093 264 / 0.08), 0 16px 40px oklch(0.243 0.093 264 / 0.07);
+  --elev-5: 0 16px 32px oklch(0.243 0.093 264 / 0.1), 0 32px 64px oklch(0.243 0.093 264 / 0.08);
 }
 
 /* ---- ACCENT: primary color ---- */
 
-/* Fareout house palette, from the brand pair #00282e / #7ced5c.
+/* OOTRIX house palette — #0A2F9C primary, #1E90FF secondary,
+ * #FFC107 accent, on #081B4B ink.
  *
- * Only the green appears here. The deep teal is a *surface* colour: at
- * L 0.254 it sits below every dark-mode background in this file, so a
- * button or active row painted with it would read as a hole rather than
- * an accent. It carries the brand through the dark-mode neutral ramp
- * above (hue 210, low chroma) instead, which is where a colour that dark
- * actually does its work.
+ * --primary is the deep brand blue at oklch(0.369 0.180 264.2). Unlike
+ * the palette this replaced, it works as an accent in both modes: dark
+ * enough to carry white text (11.06:1) and light enough to read against
+ * the dark-mode ink surfaces below.
  *
- * --primary-foreground is the teal, not white: #7ced5c is a light colour
- * (L 0.849) and white text on it fails contrast badly (~1.3:1), while
- * the teal clears AAA. Anything sitting on --primary — button labels,
- * the .row-active conversation card, badge counters — inherits this.
+ * The gold is deliberately NOT --primary. At L 0.844 white on it
+ * measures 1.63:1, so every button label and badge that inherits
+ * --primary-foreground would be unreadable. It is a highlight colour —
+ * used for emphasis chips and the "most popular" style markers — and
+ * always pairs with ink, which clears 10.15:1.
+ *
+ * --chart-2 takes the secondary blue so dashboards read as one family.
  */
 :root,
 html[data-theme="brand"] {
-  --primary: oklch(0.849 0.211 139.4);
-  --primary-foreground: oklch(0.254 0.044 209.8);
-  --primary-hover: oklch(0.885 0.19 139.4);
-  --primary-soft: oklch(0.849 0.211 139.4 / 0.14);
-  --primary-soft-2: oklch(0.849 0.211 139.4 / 0.24);
-  --ring: oklch(0.849 0.211 139.4);
-  --chart-1: oklch(0.849 0.211 139.4);
-  --chart-2: oklch(0.72 0.12 190);
-  --sidebar-primary: oklch(0.849 0.211 139.4);
-  --sidebar-primary-foreground: oklch(0.254 0.044 209.8);
-  --sidebar-ring: oklch(0.849 0.211 139.4);
+  --primary: oklch(0.369 0.18 264.2);
+  --primary-foreground: oklch(1 0 0);
+  --primary-hover: oklch(0.43 0.185 264.2);
+  --primary-soft: oklch(0.369 0.18 264.2 / 0.1);
+  --primary-soft-2: oklch(0.369 0.18 264.2 / 0.18);
+  --ring: oklch(0.369 0.18 264.2);
+  --chart-1: oklch(0.369 0.18 264.2);
+  --chart-2: oklch(0.652 0.19 253.2);
+  --sidebar-primary: oklch(0.369 0.18 264.2);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-ring: oklch(0.369 0.18 264.2);
 }
 
 html[data-theme="violet"] {

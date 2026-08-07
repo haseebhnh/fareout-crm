@@ -27,6 +27,7 @@ import {
   Zap,
 } from "lucide-react";
 import type { AccountRole } from "@/lib/auth/roles";
+import { OotrixMark } from "@/components/marketing/ootrix-logo";
 
 // Per-role chip metadata used in the sidebar's account strip + the
 // Members tab roster. Keeping this near both consumers in a single
@@ -191,10 +192,11 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
             close button is hidden since the sidebar is always-visible. */}
         <div className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-border px-4">
           <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="row-active flex h-9 w-9 items-center justify-center rounded-xl">
-              <MessageSquare className="h-4 w-4" />
-            </div>
-            <span className="text-sm font-semibold text-foreground">
+            {/* The OOTRIX mark itself, not a generic glyph in a tinted
+                tile — the brand rules call for one logo used everywhere,
+                and this is the same SVG the marketing site renders. */}
+            <OotrixMark className="h-7 w-auto shrink-0" decorative />
+            <span className="text-sm font-bold tracking-[0.14em] text-foreground">
               {t("title")}
             </span>
           </Link>
