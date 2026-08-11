@@ -307,16 +307,39 @@ export async function POST(request: Request) {
     }
 
     // Encrypt sensitive tokens before storing
+    // Preserve the stored verify token and app secret when the form
+    // doesn't send them.
+    //
+    // Both fields are write-only in the UI: the verify token input is
+    // cleared on every load and the app secret is masked, so a save that
+    // doesn't retype them submits null. Writing that null through wipes
+    // a working webhook — the verify handshake starts returning 403 and
+    // Meta silently stops delivering, with nothing in the UI to explain
+    // why. Exactly the failure this app exists to prevent.
+    //
+    // Passing null explicitly is not a way to clear them; there is no
+    // reason to want a config with credentials deliberately blanked, and
+    // "Reset Configuration" already exists for starting over.
+    const { data: currentSecrets } = await supabase
+      .from('whatsapp_config')
+      .select('verify_token, app_secret')
+      .eq('account_id', accountId)
+      .maybeSingle()
+
     let encryptedAccessToken: string
     let encryptedVerifyToken: string | null
-    // Null when the account leaves it blank — the webhook then falls back
-    // to the global META_APP_SECRET, which is the right source for
+    // Null only when no value was ever stored — the webhook then falls
+    // back to the global META_APP_SECRET, which is the right source for
     // numbers connected under the operator's own Meta app.
     let encryptedAppSecret: string | null
     try {
       encryptedAccessToken = encrypt(effectiveAccessToken)
-      encryptedVerifyToken = verify_token ? encrypt(verify_token) : null
-      encryptedAppSecret = app_secret ? encrypt(app_secret) : null
+      encryptedVerifyToken = verify_token
+        ? encrypt(verify_token)
+        : (currentSecrets?.verify_token ?? null)
+      encryptedAppSecret = app_secret
+        ? encrypt(app_secret)
+        : (currentSecrets?.app_secret ?? null)
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown encryption error'
       console.error('Encryption failed:', message)
