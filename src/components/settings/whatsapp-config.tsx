@@ -226,16 +226,17 @@ export function WhatsAppConfig() {
         pin: pin.trim() || null,
       };
 
+      // Only send the token when the user actually typed a new one. The
+      // field is masked and never echoes the stored value, so an
+      // untouched form has nothing real to send.
+      //
+      // Previously this branch refused to save at all unless the token
+      // was re-entered, which meant changing the verify token or the PIN
+      // required pasting a 200-character permanent token you probably
+      // don't have to hand. The POST handler now falls back to the
+      // stored token when this is absent, so omitting it is correct.
       if (tokenEdited && accessToken !== MASKED_TOKEN && accessToken.trim()) {
         payload.access_token = accessToken.trim();
-      } else if (config) {
-        // Existing config — reuse stored encrypted token by decrypting on the
-        // server. But our POST handler requires an access_token to verify
-        // with Meta. If the user didn't change the token, we need to signal
-        // that. Simplest: require token re-entry if they're updating.
-        toast.error('Please re-enter the Access Token to save changes');
-        setSaving(false);
-        return;
       }
 
       const res = await fetch('/api/whatsapp/config', {

@@ -194,11 +194,59 @@ export async function POST(request: Request) {
       pin,
     } = body
 
-    if (!access_token || !phone_number_id) {
+    if (!phone_number_id) {
       return NextResponse.json(
-        { error: 'access_token and phone_number_id are required' },
+        { error: 'phone_number_id is required' },
         { status: 400 }
       )
+    }
+
+    // The access token is required on first save, but not on every
+    // subsequent one.
+    //
+    // The UI masks the stored token and does not echo it back to the
+    // browser (correct — it is a credential). The consequence was that
+    // editing any *other* field, like the verify token or the PIN,
+    // failed with "re-enter the Access Token", forcing the operator to
+    // paste a 200-character permanent token to change one unrelated
+    // value. Most would paste something wrong, or give up.
+    //
+    // When it is omitted and a config already exists, reuse the stored
+    // token: decrypt it here so the Meta verification below and the
+    // re-encrypt further down both behave exactly as on a full save.
+    let effectiveAccessToken: string | null =
+      typeof access_token === 'string' && access_token.trim()
+        ? access_token.trim()
+        : null
+
+    if (!effectiveAccessToken) {
+      const { data: current } = await supabase
+        .from('whatsapp_config')
+        .select('access_token')
+        .eq('account_id', accountId)
+        .maybeSingle()
+
+      if (!current?.access_token) {
+        // No saved token to fall back on — this is a first-time save.
+        return NextResponse.json(
+          { error: 'access_token is required' },
+          { status: 400 }
+        )
+      }
+
+      try {
+        effectiveAccessToken = decrypt(current.access_token)
+      } catch {
+        // Stored under a rotated ENCRYPTION_KEY. Re-entering is the
+        // only recovery, so say that rather than failing opaquely.
+        return NextResponse.json(
+          {
+            error:
+              'The saved access token could not be decrypted (ENCRYPTION_KEY may have changed). Re-enter the token to continue.',
+          },
+          { status: 400 }
+        )
+      }
     }
 
     if (pin !== undefined && pin !== null && pin !== '') {
@@ -247,7 +295,7 @@ export async function POST(request: Request) {
     try {
       phoneInfo = await verifyPhoneNumber({
         phoneNumberId: phone_number_id,
-        accessToken: access_token,
+        accessToken: effectiveAccessToken,
       })
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown Meta API error'
@@ -266,7 +314,7 @@ export async function POST(request: Request) {
     // numbers connected under the operator's own Meta app.
     let encryptedAppSecret: string | null
     try {
-      encryptedAccessToken = encrypt(access_token)
+      encryptedAccessToken = encrypt(effectiveAccessToken)
       encryptedVerifyToken = verify_token ? encrypt(verify_token) : null
       encryptedAppSecret = app_secret ? encrypt(app_secret) : null
     } catch (err) {
@@ -325,7 +373,7 @@ export async function POST(request: Request) {
         try {
           await registerPhoneNumber({
             phoneNumberId: phone_number_id,
-            accessToken: access_token,
+            accessToken: effectiveAccessToken,
             pin,
           })
           registeredAt = new Date().toISOString()
@@ -350,7 +398,7 @@ export async function POST(request: Request) {
       try {
         await subscribeWabaToApp({
           wabaId: waba_id,
-          accessToken: access_token,
+          accessToken: effectiveAccessToken,
         })
         subscribedAppsAt = new Date().toISOString()
       } catch (err) {
