@@ -598,10 +598,18 @@ function InboxPageInner() {
         {/* Left panel: Conversation list.
             Hidden on mobile when a conversation is selected so the
             thread can occupy the full width. Fixed-width and always
-            visible from md+ (tablet's two-pane layout onwards). */}
+            visible from md+ (tablet's two-pane layout onwards).
+
+            `min-w-0` is load-bearing, for the same reason it is on the
+            thread pane below. A flex item defaults to
+            `min-width: auto`, so it refuses to shrink below its
+            content's intrinsic width — a long contact name plus the
+            timestamp pushed this pane past the viewport on phones, and
+            the parent's overflow-hidden clipped the timestamp off every
+            row rather than wrapping or scrolling. */}
         <div
           className={cn(
-            "flex h-full flex-1 md:flex-none",
+            "flex h-full min-w-0 flex-1 md:flex-none",
             hasActiveConv ? "hidden md:flex" : "flex",
           )}
         >
