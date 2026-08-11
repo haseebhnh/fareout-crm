@@ -140,10 +140,23 @@ export async function GET() {
     )
   }
 
+  // Whether Meta will actually deliver events depends only on the two
+  // LIVE checks above. `locally_marked_registered` is our own
+  // bookkeeping — a timestamp we write when /register succeeds through
+  // this app — and it is null for every number that was registered
+  // some other way: through Meta's own dashboard, by a previous tool,
+  // or before this app tracked it at all.
+  //
+  // Gating `live` on it meant a fully working number reported "Meta will
+  // not deliver events", which sent operators hunting for a two-step PIN
+  // they did not need and, worse, invited them to re-run /register
+  // against a number that was already registered.
+  //
+  // It stays in `checks` so the UI can still say "we did not register
+  // this ourselves", which is true and occasionally useful — it just no
+  // longer decides whether the integration is working.
   const live =
-    checks.phone_metadata_ok &&
-    (checks.waba_subscribed_to_app ?? false) &&
-    checks.locally_marked_registered
+    checks.phone_metadata_ok && (checks.waba_subscribed_to_app ?? false)
 
   return NextResponse.json({
     live,

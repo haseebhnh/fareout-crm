@@ -74,11 +74,6 @@ export function WhatsAppConfig() {
   const [pin, setPin] = useState('');
   const [tokenEdited, setTokenEdited] = useState(false);
 
-  // True once /register has succeeded on Meta's side (timestamp set
-  // in the row). When false, the saved config is metadata-only and
-  // Meta will silently drop every inbound event — that's the
-  // multi-number bug that prompted this work.
-  const isRegistered = Boolean(config?.registered_at);
   const lastRegistrationError = config?.last_registration_error ?? null;
 
   const [verifyingRegistration, setVerifyingRegistration] = useState(false);
@@ -92,6 +87,23 @@ export function WhatsAppConfig() {
   };
   const [registrationProbe, setRegistrationProbe] =
     useState<RegistrationProbe | null>(null);
+
+  // Whether Meta will actually deliver events here.
+  //
+  // `registered_at` alone is not that answer: it is a local timestamp
+  // written when /register succeeds *through this app*, so it is null
+  // for any number registered through Meta's own dashboard or another
+  // tool — even though those numbers work perfectly. Treating it as
+  // authoritative showed a red "Meta will not deliver events" banner on
+  // healthy setups and pushed people to hunt for a two-step PIN they
+  // did not need.
+  //
+  // So: once a live probe has run, believe the probe — it asks Meta
+  // directly. Before that, fall back to the local timestamp, which is
+  // the best guess available without a network round trip.
+  const isRegistered = registrationProbe
+    ? registrationProbe.live
+    : Boolean(config?.registered_at);
 
   // Prefer the configured canonical URL over the current origin.
   //
