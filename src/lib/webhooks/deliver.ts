@@ -115,9 +115,9 @@ async function deliverOne(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Fareout-Crm-Event': event,
-        'X-Fareout-Crm-Webhook-Id': row.id,
-        'X-Fareout-Crm-Signature': buildSignatureHeader(payload, secret, tsSeconds),
+        'X-Ootrix-Crm-Event': event,
+        'X-Ootrix-Crm-Webhook-Id': row.id,
+        'X-Ootrix-Crm-Signature': buildSignatureHeader(payload, secret, tsSeconds),
       },
       body: payload,
       // Do NOT follow redirects — a public URL could 3xx-bounce to an

@@ -1,7 +1,7 @@
 // ============================================================
 // Configuration — read once at startup from the environment.
 //
-// The server needs the URL of a Fareout CRM instance and an API key.
+// The server needs the URL of a Ootrix CRM instance and an API key.
 // Two opt-in flags decide whether write / broadcast tools are
 // registered at all: by default the server is READ-ONLY, so an
 // MCP client can never see a tool that mutates data or sends a
@@ -24,17 +24,17 @@ function truthy(value: string | undefined): boolean {
 }
 
 export function loadConfig(): Config {
-  const baseUrlRaw = process.env.FAREOUT_CRM_BASE_URL?.trim();
-  const apiKey = process.env.FAREOUT_CRM_API_KEY?.trim();
+  const baseUrlRaw = process.env.OOTRIX_CRM_BASE_URL?.trim();
+  const apiKey = process.env.OOTRIX_CRM_API_KEY?.trim();
 
   const missing: string[] = [];
-  if (!baseUrlRaw) missing.push('FAREOUT_CRM_BASE_URL');
-  if (!apiKey) missing.push('FAREOUT_CRM_API_KEY');
+  if (!baseUrlRaw) missing.push('OOTRIX_CRM_BASE_URL');
+  if (!apiKey) missing.push('OOTRIX_CRM_API_KEY');
   if (missing.length > 0) {
     throw new Error(
       `Missing required environment variable(s): ${missing.join(', ')}. ` +
-        `Set FAREOUT_CRM_BASE_URL to your instance URL (e.g. https://crm.example.com) ` +
-        `and FAREOUT_CRM_API_KEY to a key from Settings → API keys.`,
+        `Set OOTRIX_CRM_BASE_URL to your instance URL (e.g. https://crm.example.com) ` +
+        `and OOTRIX_CRM_API_KEY to a key from Settings → API keys.`,
     );
   }
 
@@ -42,16 +42,16 @@ export function loadConfig(): Config {
   const baseUrl = baseUrlRaw!.replace(/\/+$/, '');
   if (!/^https?:\/\//.test(baseUrl)) {
     throw new Error(
-      `FAREOUT_CRM_BASE_URL must start with http:// or https:// (got "${baseUrl}").`,
+      `OOTRIX_CRM_BASE_URL must start with http:// or https:// (got "${baseUrl}").`,
     );
   }
 
-  const enableWrites = truthy(process.env.FAREOUT_CRM_ENABLE_WRITES);
-  const enableBroadcasts = truthy(process.env.FAREOUT_CRM_ENABLE_BROADCASTS);
+  const enableWrites = truthy(process.env.OOTRIX_CRM_ENABLE_WRITES);
+  const enableBroadcasts = truthy(process.env.OOTRIX_CRM_ENABLE_BROADCASTS);
 
   if (enableBroadcasts && !enableWrites) {
     throw new Error(
-      'FAREOUT_CRM_ENABLE_BROADCASTS requires FAREOUT_CRM_ENABLE_WRITES to also be set.',
+      'OOTRIX_CRM_ENABLE_BROADCASTS requires OOTRIX_CRM_ENABLE_WRITES to also be set.',
     );
   }
 

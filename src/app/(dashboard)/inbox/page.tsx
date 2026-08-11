@@ -16,10 +16,14 @@ import { ContactSidebar } from "@/components/inbox/contact-sidebar";
 import { toast } from "sonner";
 import { WifiOff } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { readMigratedItem } from "@/lib/storage/legacy-key";
 
 // Remembers the agent's show/hide choice for the desktop contact panel
 // across reloads and sessions (device-scoped, like the theme prefs).
-const CONTACT_PANEL_STORAGE_KEY = "fareout-crm:inbox:contact-panel-open";
+const CONTACT_PANEL_STORAGE_KEY = "ootrix-crm:inbox:contact-panel-open";
+const LEGACY_CONTACT_PANEL_KEYS = [
+  "fareout-crm:inbox:contact-panel-open",
+] as const;
 
 // `useSearchParams` (the `?c=<id>` deep link below) requires a Suspense
 // boundary or the production build bails to CSR and errors out. Thin
@@ -71,7 +75,10 @@ function InboxPageInner() {
   const [contactPanelOpen, setContactPanelOpen] = useState(true);
   useEffect(() => {
     try {
-      const stored = localStorage.getItem(CONTACT_PANEL_STORAGE_KEY);
+      const stored = readMigratedItem(
+        CONTACT_PANEL_STORAGE_KEY,
+        LEGACY_CONTACT_PANEL_KEYS,
+      );
       if (stored !== null) setContactPanelOpen(stored === "true");
     } catch {
       // localStorage can throw in private-browsing / sandboxed contexts.

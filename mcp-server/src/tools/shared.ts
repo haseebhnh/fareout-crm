@@ -37,7 +37,7 @@ export function handle<A>(
       return await fn(args);
     } catch (err) {
       if (err instanceof FareoutCrmApiError) {
-        return errorResult(`Fareout CRM API error [${err.code}]: ${err.message}`);
+        return errorResult(`Ootrix CRM API error [${err.code}]: ${err.message}`);
       }
       return errorResult(`Unexpected error: ${(err as Error).message}`);
     }

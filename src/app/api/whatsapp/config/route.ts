@@ -259,7 +259,7 @@ export async function POST(request: Request) {
     }
 
     // Reject if another account has already claimed this phone_number_id.
-    // Fareout CRM is single-tenant-per-WhatsApp-number — letting two accounts
+    // Ootrix CRM is single-tenant-per-WhatsApp-number — letting two accounts
     // bind the same number causes the webhook's `.single()` lookup to
     // throw PGRST116 ("multiple rows"), silently dropping every
     // inbound message. See issue #136. Post-multi-user we key on

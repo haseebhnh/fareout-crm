@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // ============================================================
-// Fareout CRM MCP server — entry point.
+// Ootrix CRM MCP server — entry point.
 //
-// A stdio Model Context Protocol server that exposes the Fareout CRM
+// A stdio Model Context Protocol server that exposes the Ootrix CRM
 // public API (`/api/v1`) as MCP tools, so an MCP client (Claude
 // Desktop, Cursor, etc.) can drive a self-hosted WhatsApp CRM in
 // natural language.
@@ -25,7 +25,7 @@ async function main(): Promise<void> {
   const config = loadConfig();
   const client = new FareoutCrmClient(config);
 
-  const server = new McpServer({ name: 'fareout-crm-mcp', version: VERSION });
+  const server = new McpServer({ name: 'ootrix-crm-mcp', version: VERSION });
   const groups = registerTools(server, client, config);
 
   const transport = new StdioServerTransport();
@@ -33,13 +33,13 @@ async function main(): Promise<void> {
 
   // Stderr only — stdout is reserved for the MCP protocol.
   console.error(
-    `Fareout CRM MCP server v${VERSION} ready — instance ${config.baseUrl}, ` +
+    `Ootrix CRM MCP server v${VERSION} ready — instance ${config.baseUrl}, ` +
       `tool groups: ${groups.join(', ')}` +
-      (config.enableWrites ? '' : ' (read-only; set FAREOUT_CRM_ENABLE_WRITES to allow changes)'),
+      (config.enableWrites ? '' : ' (read-only; set OOTRIX_CRM_ENABLE_WRITES to allow changes)'),
   );
 }
 
 main().catch((err) => {
-  console.error(`Failed to start Fareout CRM MCP server: ${(err as Error).message}`);
+  console.error(`Failed to start Ootrix CRM MCP server: ${(err as Error).message}`);
   process.exit(1);
 });

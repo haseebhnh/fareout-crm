@@ -1,9 +1,9 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.ArnasDon/wacrm-mcp",
-  "description": "Drive a self-hosted Fareout CRM (WhatsApp CRM) from Claude, Cursor and other MCP clients.",
+  "name": "io.github.ArnasDon/ootrix-crm-mcp",
+  "description": "Drive a self-hosted Ootrix CRM (WhatsApp CRM) from Claude, Cursor and other MCP clients.",
   "repository": {
-    "url": "https://github.com/ArnasDon/wacrm",
+    "url": "https://github.com/ArnasDon/ootrix-crm",
     "source": "github",
     "subfolder": "mcp-server"
   },
@@ -11,36 +11,36 @@
   "packages": [
     {
       "registryType": "npm",
-      "identifier": "fareout-crm-mcp",
+      "identifier": "ootrix-crm-mcp",
       "version": "0.1.1",
       "transport": {
         "type": "stdio"
       },
       "environmentVariables": [
         {
-          "name": "FAREOUT_CRM_BASE_URL",
-          "description": "Base URL of your Fareout CRM instance, e.g. https://crm.example.com",
+          "name": "OOTRIX_CRM_BASE_URL",
+          "description": "Base URL of your Ootrix CRM instance, e.g. https://crm.example.com",
           "isRequired": true,
           "isSecret": false,
           "format": "string"
         },
         {
-          "name": "FAREOUT_CRM_API_KEY",
-          "description": "Fareout CRM API key (Settings → API keys). Its scopes decide what is allowed.",
+          "name": "OOTRIX_CRM_API_KEY",
+          "description": "Ootrix CRM API key (Settings → API keys). Its scopes decide what is allowed.",
           "isRequired": true,
           "isSecret": true,
           "format": "string"
         },
         {
-          "name": "FAREOUT_CRM_ENABLE_WRITES",
+          "name": "OOTRIX_CRM_ENABLE_WRITES",
           "description": "Set to true to expose contact create/update and message sending. Read-only when unset.",
           "isRequired": false,
           "isSecret": false,
           "format": "string"
         },
         {
-          "name": "FAREOUT_CRM_ENABLE_BROADCASTS",
-          "description": "Set to true to expose the mass-broadcast tool. Requires FAREOUT_CRM_ENABLE_WRITES.",
+          "name": "OOTRIX_CRM_ENABLE_BROADCASTS",
+          "description": "Set to true to expose the mass-broadcast tool. Requires OOTRIX_CRM_ENABLE_WRITES.",
           "isRequired": false,
           "isSecret": false,
           "format": "string"

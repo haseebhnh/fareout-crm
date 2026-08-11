@@ -12,6 +12,8 @@ import {
 import {
   DEFAULT_MODE,
   DEFAULT_THEME,
+  LEGACY_MODE_STORAGE_KEYS,
+  LEGACY_STORAGE_KEYS,
   MODE_STORAGE_KEY,
   STORAGE_KEY,
   isMode,
@@ -19,6 +21,7 @@ import {
   type Mode,
   type ThemeId,
 } from "@/lib/themes";
+import { readMigratedItem } from "@/lib/storage/legacy-key";
 
 /**
  * ThemeProvider — wraps the whole app, owns the two theming axes:
@@ -55,7 +58,7 @@ function readInitialTheme(): ThemeId {
   const fromAttr = document.documentElement.dataset.theme;
   if (isThemeId(fromAttr)) return fromAttr;
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
+    const stored = readMigratedItem(STORAGE_KEY, LEGACY_STORAGE_KEYS);
     if (isThemeId(stored)) return stored;
   } catch {
     // localStorage can throw in private-browsing / sandboxed contexts.
@@ -68,7 +71,7 @@ function readInitialMode(): Mode {
   const fromAttr = document.documentElement.dataset.mode;
   if (isMode(fromAttr)) return fromAttr;
   try {
-    const stored = localStorage.getItem(MODE_STORAGE_KEY);
+    const stored = readMigratedItem(MODE_STORAGE_KEY, LEGACY_MODE_STORAGE_KEYS);
     if (isMode(stored)) return stored;
   } catch {
     // localStorage can throw in private-browsing / sandboxed contexts.

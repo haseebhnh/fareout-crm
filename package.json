@@ -1,17 +1,17 @@
 {
-  "name": "fareout-crm",
+  "name": "ootrix-crm",
   "version": "0.8.0",
   "private": true,
-  "description": "Self-hostable CRM template for WhatsApp built on Next.js and Supabase — shared inbox, contacts, sales pipelines, broadcasts, and no-code automations.",
+  "description": "Ootrix CRM \u2014 AI-powered CRM and business operating system. Shared inbox across WhatsApp, Instagram and Messenger, contacts, sales pipelines, broadcasts and no-code automations.",
   "license": "MIT",
   "author": "Arnas Donauskas",
-  "homepage": "https://github.com/ArnasDon/wacrm",
+  "homepage": "https://ootrix.com",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ArnasDon/wacrm.git"
+    "url": "git+https://github.com/haseebhnh/fareout-crm.git"
   },
   "bugs": {
-    "url": "https://github.com/ArnasDon/wacrm/issues"
+    "url": "https://github.com/haseebhnh/fareout-crm/issues"
   },
   "keywords": [
     "crm",

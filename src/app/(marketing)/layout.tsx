@@ -11,7 +11,7 @@ import type { ReactNode } from "react";
  */
 
 export const metadata: Metadata = {
-  // `absolute` escapes the root layout's "%s — Fareout CRM" template.
+  // `absolute` escapes the root layout's "%s — Ootrix CRM" template.
   // The marketing site is its own brand and must not inherit the app's
   // product name in its title.
   title: { absolute: "OOTRIX — Connect · Manage · Grow" },

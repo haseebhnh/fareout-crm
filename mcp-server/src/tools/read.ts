@@ -20,7 +20,7 @@ export function registerReadTools(server: McpServer, client: FareoutCrmClient): 
     {
       title: 'Who am I',
       description:
-        'Verify the API key and show which Fareout CRM account it is bound to and what scopes it carries. Call this first to discover what actions are possible.',
+        'Verify the API key and show which Ootrix CRM account it is bound to and what scopes it carries. Call this first to discover what actions are possible.',
       inputSchema: {},
       annotations: { ...READ_ONLY, title: 'Who am I' },
     },

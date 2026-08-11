@@ -1,21 +1,21 @@
-# Fareout CRM MCP server
+# Ootrix CRM MCP server
 
 A [Model Context Protocol](https://modelcontextprotocol.io) server for
-**Fareout CRM** — a fork of the self-hostable
-[wacrm](https://github.com/ArnasDon/wacrm) WhatsApp CRM. It lets MCP clients (Claude Desktop, Claude Code, Cursor,
+**Ootrix CRM** — a fork of the self-hostable
+[ootrix-crm](https://github.com/ArnasDon/ootrix-crm) WhatsApp CRM. It lets MCP clients (Claude Desktop, Claude Code, Cursor,
 and others) drive your CRM in natural language:
 
 > "How many conversations are still open?"
 > "Find the contact for +1 415 555 0123 and show the last few messages."
 > "Draft and send an order-update template to Jane."
 
-It's a thin wrapper over Fareout CRM's public [`/api/v1`](../docs/public-api.md)
+It's a thin wrapper over Ootrix CRM's public [`/api/v1`](../docs/public-api.md)
 REST API. All auth, scoping, and rate limiting are enforced by your
-Fareout CRM instance — this server just exposes the API as MCP tools.
+Ootrix CRM instance — this server just exposes the API as MCP tools.
 
 ## Prerequisites
 
-1. A running Fareout CRM instance (your own self-hosted deploy).
+1. A running Ootrix CRM instance (your own self-hosted deploy).
 2. An API key: in the dashboard go to **Settings → API keys → New API
    key** and grant only the scopes you need. The key is shown once.
 
@@ -26,10 +26,10 @@ write guards:
 
 | Variable                  | Required | Purpose                                                        |
 | ------------------------- | -------- | -------------------------------------------------------------- |
-| `FAREOUT_CRM_BASE_URL`          | yes      | Your instance URL, e.g. `https://crm.example.com`              |
-| `FAREOUT_CRM_API_KEY`           | yes      | An API key from the dashboard                                  |
-| `FAREOUT_CRM_ENABLE_WRITES`     | no       | `true` to expose contact writes + message sending             |
-| `FAREOUT_CRM_ENABLE_BROADCASTS` | no       | `true` to expose mass broadcasts (needs `FAREOUT_CRM_ENABLE_WRITES`) |
+| `OOTRIX_CRM_BASE_URL`          | yes      | Your instance URL, e.g. `https://crm.example.com`              |
+| `OOTRIX_CRM_API_KEY`           | yes      | An API key from the dashboard                                  |
+| `OOTRIX_CRM_ENABLE_WRITES`     | no       | `true` to expose contact writes + message sending             |
+| `OOTRIX_CRM_ENABLE_BROADCASTS` | no       | `true` to expose mass broadcasts (needs `OOTRIX_CRM_ENABLE_WRITES`) |
 
 ### Claude Desktop / Claude Code / Cursor
 
@@ -39,12 +39,12 @@ Add to your MCP client config (e.g. `claude_desktop_config.json`, or
 ```jsonc
 {
   "mcpServers": {
-    "fareout-crm": {
+    "ootrix-crm": {
       "command": "npx",
-      "args": ["-y", "fareout-crm-mcp"],
+      "args": ["-y", "ootrix-crm-mcp"],
       "env": {
-        "FAREOUT_CRM_BASE_URL": "https://crm.example.com",
-        "FAREOUT_CRM_API_KEY": "fareout_crm_live_xxxxxxxxxxxxxxxxxxxxxxxx"
+        "OOTRIX_CRM_BASE_URL": "https://crm.example.com",
+        "OOTRIX_CRM_API_KEY": "ootrix_crm_live_xxxxxxxxxxxxxxxxxxxxxxxx"
       }
     }
   }
@@ -56,10 +56,10 @@ assistant change data or send messages, add the write guards:
 
 ```jsonc
 "env": {
-  "FAREOUT_CRM_BASE_URL": "https://crm.example.com",
-  "FAREOUT_CRM_API_KEY": "fareout_crm_live_xxxxxxxxxxxxxxxxxxxxxxxx",
-  "FAREOUT_CRM_ENABLE_WRITES": "true",
-  "FAREOUT_CRM_ENABLE_BROADCASTS": "true"
+  "OOTRIX_CRM_BASE_URL": "https://crm.example.com",
+  "OOTRIX_CRM_API_KEY": "ootrix_crm_live_xxxxxxxxxxxxxxxxxxxxxxxx",
+  "OOTRIX_CRM_ENABLE_WRITES": "true",
+  "OOTRIX_CRM_ENABLE_BROADCASTS": "true"
 }
 ```
 
@@ -89,8 +89,8 @@ the server layers three guards:
 
 1. **Read-only by default.** Write and broadcast tools are not even
    registered — the model can't see them — unless you opt in via
-   `FAREOUT_CRM_ENABLE_WRITES` / `FAREOUT_CRM_ENABLE_BROADCASTS`.
-2. **API-key scopes.** Whatever the guards allow, your Fareout CRM instance
+   `OOTRIX_CRM_ENABLE_WRITES` / `OOTRIX_CRM_ENABLE_BROADCASTS`.
+2. **API-key scopes.** Whatever the guards allow, your Ootrix CRM instance
    still enforces the key's scopes. A call without the right scope
    returns a clean `forbidden` error. Issue a read-only key for a
    read-only assistant.
@@ -111,4 +111,4 @@ Logs go to **stderr** — stdout is reserved for the MCP protocol.
 
 ## License
 
-MIT — same as upstream [wacrm](https://github.com/ArnasDon/wacrm), which this project forks.
+MIT — same as upstream [ootrix-crm](https://github.com/ArnasDon/ootrix-crm), which this project forks.

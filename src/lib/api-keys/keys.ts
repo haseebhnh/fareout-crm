@@ -12,17 +12,37 @@
 //   only slow the per-request auth lookup. A fast hash with a UNIQUE
 //   index is the correct, indexable choice for opaque secrets.
 //
-// Why the `fareout_crm_live_` prefix
+// Why the `ootrix_crm_live_` prefix
 //   - Self-identifying: a leaked string is instantly recognisable as
-//     a Fareout CRM key (handy for secret-scanners like GitGuardian).
-//   - Forward-compatible: leaves room for a `fareout_crm_test_` variant if
+//     an Ootrix CRM key (handy for secret-scanners like GitGuardian).
+//   - Forward-compatible: leaves room for a `ootrix_crm_test_` variant if
 //     a sandbox mode is ever added, without reshaping the format.
 // ============================================================
 
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 
-/** Secret prefix on every key. Part of the plaintext, not a secret. */
-export const API_KEY_PREFIX = 'fareout_crm_live_';
+/** Secret prefix on every newly generated key. Plaintext, not a secret. */
+export const API_KEY_PREFIX = 'ootrix_crm_live_';
+
+/**
+ * Prefixes still accepted when a key is presented.
+ *
+ * The product was renamed, but keys are long-lived credentials that
+ * customers have already pasted into their own servers and CI. A key is
+ * authenticated by the SHA-256 of the whole string, so the prefix is
+ * only a shape check — rejecting an older one would revoke working
+ * integrations for a cosmetic reason, with a 401 that says nothing
+ * about why.
+ *
+ * New keys always get API_KEY_PREFIX. This list only widens what is
+ * tolerated on the way in, and can be trimmed once no legacy keys
+ * remain (api_keys.key_prefix shows which are still in use).
+ */
+const ACCEPTED_KEY_PREFIXES = [
+  API_KEY_PREFIX,
+  'fareout_crm_live_',
+  'wacrm_live_',
+] as const;
 
 /**
  * Length of the non-secret display prefix stored in `key_prefix` and
@@ -73,8 +93,8 @@ export function hashApiKey(plaintext: string): string {
  * malformed `Authorization` headers (e.g. a stale invite token).
  */
 export function looksLikeApiKey(value: string): boolean {
-  return (
-    value.startsWith(API_KEY_PREFIX) && value.length > API_KEY_PREFIX.length
+  return ACCEPTED_KEY_PREFIXES.some(
+    (prefix) => value.startsWith(prefix) && value.length > prefix.length,
   );
 }
 

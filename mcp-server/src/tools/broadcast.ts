@@ -1,8 +1,8 @@
 // ============================================================
 // Broadcast tool — the highest-risk action.
 //
-// Registered only when BOTH FAREOUT_CRM_ENABLE_WRITES and
-// FAREOUT_CRM_ENABLE_BROADCASTS are set. A single call can message up to
+// Registered only when BOTH OOTRIX_CRM_ENABLE_WRITES and
+// OOTRIX_CRM_ENABLE_BROADCASTS are set. A single call can message up to
 // 1000 people, so on top of the env gate the tool requires an
 // explicit `confirm: true` argument — the model must consciously opt
 // in, and a client that echoes tool args gives the user a last look.

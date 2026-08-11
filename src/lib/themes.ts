@@ -26,7 +26,14 @@ export type ThemeId = (typeof THEME_IDS)[number];
 
 export const DEFAULT_THEME: ThemeId = "brand";
 
-export const STORAGE_KEY = "fareout-crm.theme";
+export const STORAGE_KEY = "ootrix-crm.theme";
+
+/**
+ * Keys this value used to live under, newest first. Read as a fallback
+ * so a rename doesn't silently reset everyone's saved accent — see
+ * `readMigratedItem`. Safe to delete once no browsers hold the old key.
+ */
+export const LEGACY_STORAGE_KEYS = ["fareout-crm.theme", "wacrm.theme"] as const;
 
 /**
  * MODE — the light/dark dimension, orthogonal to the accent theme.
@@ -46,7 +53,12 @@ export type Mode = (typeof MODES)[number];
 
 export const DEFAULT_MODE: Mode = "light";
 
-export const MODE_STORAGE_KEY = "fareout-crm.mode";
+export const MODE_STORAGE_KEY = "ootrix-crm.mode";
+
+export const LEGACY_MODE_STORAGE_KEYS = [
+  "fareout-crm.mode",
+  "ootrix-crm.mode",
+] as const;
 
 export function isMode(value: unknown): value is Mode {
   return (

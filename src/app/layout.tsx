@@ -9,6 +9,8 @@ import { ThemedToaster } from "@/components/themed-toaster";
 import {
   DEFAULT_MODE,
   DEFAULT_THEME,
+  LEGACY_MODE_STORAGE_KEYS,
+  LEGACY_STORAGE_KEYS,
   MODE_STORAGE_KEY,
   MODES,
   STORAGE_KEY,
@@ -59,16 +61,36 @@ const THEME_BOOT_SCRIPT = `
 (function(){
   var d = document.documentElement;
   try {
+    // Duplicates readMigratedItem rather than importing it: this runs
+    // as a raw inline script before any bundle loads, which is the
+    // whole point — it must set the theme before first paint. Without
+    // the legacy fallback here, a returning user would see the default
+    // theme flash and then correct itself, which is exactly the flash
+    // this script exists to prevent.
+    var read = function (key, legacy) {
+      var v = localStorage.getItem(key);
+      if (v !== null) return v;
+      for (var i = 0; i < legacy.length; i++) {
+        var old = localStorage.getItem(legacy[i]);
+        if (old !== null) {
+          localStorage.setItem(key, old);
+          localStorage.removeItem(legacy[i]);
+          return old;
+        }
+      }
+      return null;
+    };
+
     var THEME_KEY = ${JSON.stringify(STORAGE_KEY)};
     var THEME_DEFAULT = ${JSON.stringify(DEFAULT_THEME)};
     var THEMES = ${JSON.stringify(THEME_IDS)};
-    var savedTheme = localStorage.getItem(THEME_KEY);
+    var savedTheme = read(THEME_KEY, ${JSON.stringify(LEGACY_STORAGE_KEYS)});
     d.dataset.theme = THEMES.indexOf(savedTheme) !== -1 ? savedTheme : THEME_DEFAULT;
 
     var MODE_KEY = ${JSON.stringify(MODE_STORAGE_KEY)};
     var MODE_DEFAULT = ${JSON.stringify(DEFAULT_MODE)};
     var MODES = ${JSON.stringify(MODES)};
-    var savedMode = localStorage.getItem(MODE_KEY);
+    var savedMode = read(MODE_KEY, ${JSON.stringify(LEGACY_MODE_STORAGE_KEYS)});
     d.dataset.mode = MODES.indexOf(savedMode) !== -1 ? savedMode : MODE_DEFAULT;
   } catch (_e) {
     d.dataset.theme = ${JSON.stringify(DEFAULT_THEME)};

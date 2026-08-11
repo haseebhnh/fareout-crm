@@ -63,13 +63,13 @@ import {
 //
 //   When `ALLOWED_INVITE_HOSTS` is set (comma-separated hostnames),
 //   we validate the derived host against the list. Anything not
-//   on the list falls through to the wacrm.tech fallback (upstream
+//   on the list falls through to the ootrix-crm.tech fallback (upstream
 //   marketing/docs site — see note below) with a loud console.warn.
 //   Operators who care about this attack surface should set this to
 //   their canonical hostnames; everyone else gets today's permissive
 //   behavior.
 //
-// Previous implementation hard-defaulted to `https://wacrm.tech`
+// Previous implementation hard-defaulted to `https://ootrix-crm.tech`
 // (the upstream docs/marketing site, a different repo — left as-is
 // here since this fork has no equivalent hosted site). Forks that
 // didn't set `NEXT_PUBLIC_SITE_URL` got invite links pointing at the
@@ -133,9 +133,9 @@ function getBaseUrl(request: Request): string {
       "[POST /api/account/invitations] could not derive base URL from request; falling back to marketing domain",
     );
   }
-  // NOTE: intentionally left as the upstream wacrm.tech marketing
+  // NOTE: intentionally left as the upstream ootrix-crm.tech marketing
   // domain (this fork has no equivalent hosted site to fall back to).
-  return "https://wacrm.tech";
+  return "https://ootrix-crm.tech";
 }
 
 const MAX_LABEL_LEN = 80;

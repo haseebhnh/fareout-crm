@@ -34,6 +34,7 @@ import { EditorHeader } from "./header";
 import { ValidationPanel } from "./validation-panel";
 import { NODE_META, nodeColors, type NodeType } from "./shared";
 import { cn } from "@/lib/utils";
+import { readMigratedItem } from "@/lib/storage/legacy-key";
 import type { FlowRow, FlowNodeRow } from "@/lib/flows/types";
 import { useTranslations } from "next-intl";
 
@@ -47,7 +48,8 @@ const MOBILE_BREAKPOINT = "(max-width: 767px)";
 
 type View = "canvas" | "list";
 
-const STORAGE_KEY = "fareout-crm.flowEditor.view";
+const STORAGE_KEY = "ootrix-crm.flowEditor.view";
+const LEGACY_STORAGE_KEYS = ["fareout-crm.flowEditor.view"] as const;
 
 // Legend covers every node type, derived from NODE_META so a new type
 // can't silently go undocumented. NODE_META's key order already reads
@@ -69,7 +71,7 @@ export function FlowEditorShell({ initialFlow, initialNodes }: Props) {
   // Default to `canvas` (the new default) when nothing is saved.
   const [view, setView] = useState<View>(() => {
     try {
-      const saved = window.localStorage.getItem(STORAGE_KEY);
+      const saved = readMigratedItem(STORAGE_KEY, LEGACY_STORAGE_KEYS);
       if (saved === "canvas" || saved === "list") return saved;
     } catch {
       // Private browsing / disabled storage — fall through to default.

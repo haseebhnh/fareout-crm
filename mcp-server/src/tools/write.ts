@@ -1,5 +1,5 @@
 // ============================================================
-// Write tools — registered only when FAREOUT_CRM_ENABLE_WRITES is set.
+// Write tools — registered only when OOTRIX_CRM_ENABLE_WRITES is set.
 //
 // These change data or send a WhatsApp message. They are gated so a
 // read-only deployment never exposes them to the model at all. (The
