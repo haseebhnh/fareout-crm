@@ -93,10 +93,22 @@ export function WhatsAppConfig() {
   const [registrationProbe, setRegistrationProbe] =
     useState<RegistrationProbe | null>(null);
 
-  const webhookUrl =
-    typeof window !== 'undefined'
-      ? `${window.location.origin}/api/whatsapp/webhook`
-      : '';
+  // Prefer the configured canonical URL over the current origin.
+  //
+  // The app answers on several hostnames now (the apex, app.*, and the
+  // legacy host that 307s), so deriving this from window.location gave
+  // a different callback URL depending on which one the admin happened
+  // to be viewing. Meta stores exactly one callback per app, and the
+  // value here is what the operator pastes there — so it has to be
+  // stable, not a reflection of the current tab.
+  //
+  // Falls back to the current origin when NEXT_PUBLIC_SITE_URL is unset
+  // (local development, self-hosters on a single domain), which is the
+  // previous behaviour.
+  const webhookUrl = `${
+    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/+$/, '') ||
+    (typeof window !== 'undefined' ? window.location.origin : '')
+  }/api/whatsapp/webhook`;
 
   const fetchConfig = useCallback(async (acctId: string) => {
     setLoading(true);
