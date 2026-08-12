@@ -87,8 +87,9 @@ export interface AccountContext {
   accountId: string;
   /** Caller's role within their account. */
   role: AccountRole;
-  /** Lightweight account meta — id + name. */
-  account: { id: string; name: string };
+  /** Lightweight account meta — id, name, and which Ootrix products
+   *  this account can reach (see src/lib/products/registry.ts). */
+  account: { id: string; name: string; enabledProducts: string[] };
 }
 
 /**
@@ -149,7 +150,7 @@ export async function getCurrentAccount(): Promise<AccountContext> {
   // RLS, so it stays robust against cache staleness and older schemas.
   const { data: account, error: accountErr } = await supabase
     .from("accounts")
-    .select("id, name")
+    .select("id, name, enabled_products")
     .eq("id", data.account_id)
     .maybeSingle();
 
@@ -168,7 +169,11 @@ export async function getCurrentAccount(): Promise<AccountContext> {
     userId: user.id,
     accountId: data.account_id,
     role: data.account_role,
-    account: { id: account.id, name: account.name },
+    account: {
+      id: account.id,
+      name: account.name,
+      enabledProducts: (account.enabled_products as string[] | null) ?? [],
+    },
   };
 }
 
