@@ -92,6 +92,7 @@ const TENANT_SCOPED_TABLES = [
   "branches",
   "candidate_applications",
   "hr_settings",
+  "employee_onboarding_items",
 ] as const;
 
 describe("tenant isolation — structural guarantees", () => {
@@ -197,6 +198,7 @@ describe("HR — self-vs-admin scoping (§26: employee A must not see employee B
     "goals",
     "performance_reviews",
     "employee_documents",
+    "employee_onboarding_items",
   ] as const) {
     it(`${table}: SELECT policy requires admin OR the caller's own employee row`, () => {
       const policy = sql.match(
@@ -353,6 +355,18 @@ describe("HR — self-vs-admin scoping (§26: employee A must not see employee B
     expect(fn![0]).toMatch(/SET search_path\s*=\s*public/i);
     expect(sql).toMatch(
       /CREATE TRIGGER trg_auto_approve_leave\s+AFTER INSERT ON leave_requests/i,
+    );
+  });
+
+  it("an employee can only flip is_done on their own onboarding checklist, not retitle it", () => {
+    const fn = sql.match(
+      /CREATE OR REPLACE FUNCTION onboarding_restrict_self_update_fields[\s\S]*?\$\$;/i,
+    );
+    expect(fn, "onboarding_restrict_self_update_fields is missing").not.toBeNull();
+    expect(fn![0]).toMatch(/SECURITY DEFINER/i);
+    expect(fn![0]).toMatch(/SET search_path\s*=\s*public/i);
+    expect(sql).toMatch(
+      /CREATE TRIGGER onboarding_restrict_self_update\s+BEFORE UPDATE ON employee_onboarding_items/i,
     );
   });
 });

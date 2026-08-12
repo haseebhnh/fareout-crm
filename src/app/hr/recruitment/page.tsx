@@ -40,7 +40,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Briefcase, Users, Plus, Loader2, CalendarPlus, Download } from 'lucide-react';
+import { Briefcase, Users, Plus, Loader2, CalendarPlus, Download, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface JobOpening {
@@ -60,7 +60,28 @@ interface Candidate {
   job_opening_id: string | null;
   stage: string;
   resume_storage_path: string | null;
+  converted_employee_id: string | null;
 }
+
+interface Department {
+  id: string;
+  name: string;
+}
+interface Designation {
+  id: string;
+  title: string;
+}
+interface Branch {
+  id: string;
+  name: string;
+}
+
+const DEFAULT_ONBOARDING_ITEMS = [
+  'Collect signed offer/contract',
+  'Set up email and system access',
+  'Assign equipment',
+  'Complete orientation',
+];
 
 const SOURCES = ['manual', 'email', 'whatsapp', 'website', 'referral', 'job_portal'] as const;
 const SOURCE_LABEL: Record<string, string> = {
@@ -118,6 +139,9 @@ export default function RecruitmentPage() {
   const [loading, setLoading] = useState(true);
   const [jobs, setJobs] = useState<JobOpening[]>([]);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [designations, setDesignations] = useState<Designation[]>([]);
+  const [branches, setBranches] = useState<Branch[]>([]);
   const [myInterviews, setMyInterviews] = useState<
     (Interview & { candidate_name: string })[]
   >([]);
@@ -125,6 +149,7 @@ export default function RecruitmentPage() {
   const [jobDialogOpen, setJobDialogOpen] = useState(false);
   const [candidateDialogOpen, setCandidateDialogOpen] = useState(false);
   const [interviewDialogOpen, setInterviewDialogOpen] = useState<string | null>(null);
+  const [hireDialogCandidate, setHireDialogCandidate] = useState<Candidate | null>(null);
   const [saving, setSaving] = useState(false);
 
   const [jobForm, setJobForm] = useState({ title: '', employment_type: 'full_time' });
@@ -141,24 +166,38 @@ export default function RecruitmentPage() {
     type: 'video',
     location_or_link: '',
   });
+  const [hireForm, setHireForm] = useState({
+    department_id: '',
+    designation_id: '',
+    branch_id: '',
+    hired_at: new Date().toISOString().slice(0, 10),
+  });
 
   const load = useCallback(async () => {
     if (!accountId || !user) return;
     setLoading(true);
 
     if (canManageMembers) {
-      const [jobRes, candRes] = await Promise.all([
+      const [jobRes, candRes, deptRes, desigRes, branchRes] = await Promise.all([
         supabase
           .from('job_openings')
           .select('id, title, employment_type, openings_count, status')
           .order('created_at', { ascending: false }),
         supabase
           .from('candidates')
-          .select('id, full_name, email, phone, source, job_opening_id, stage, resume_storage_path')
+          .select(
+            'id, full_name, email, phone, source, job_opening_id, stage, resume_storage_path, converted_employee_id',
+          )
           .order('created_at', { ascending: false }),
+        supabase.from('departments').select('id, name').order('name'),
+        supabase.from('designations').select('id, title').order('title'),
+        supabase.from('branches').select('id, name').eq('is_active', true).order('name'),
       ]);
       setJobs((jobRes.data as JobOpening[]) ?? []);
       setCandidates((candRes.data as Candidate[]) ?? []);
+      setDepartments((deptRes.data as Department[]) ?? []);
+      setDesignations((desigRes.data as Designation[]) ?? []);
+      setBranches((branchRes.data as Branch[]) ?? []);
     }
 
     const { data: interviewRows } = await supabase
@@ -367,6 +406,60 @@ export default function RecruitmentPage() {
     }
   };
 
+  // Rule #23: "Do not create another employee record" — this maps
+  // the existing candidate onto the existing `employees` table (044),
+  // it does not invent a parallel record. `converted_employee_id`
+  // both records the link and, once set, is what the UI checks to
+  // stop a second conversion of the same candidate.
+  const handleCreateEmployee = async () => {
+    if (!hireDialogCandidate || !accountId) return;
+    setSaving(true);
+    const { data: employee, error } = await supabase
+      .from('employees')
+      .insert({
+        account_id: accountId,
+        full_name: hireDialogCandidate.full_name,
+        email: hireDialogCandidate.email,
+        phone: hireDialogCandidate.phone,
+        department_id: hireForm.department_id || null,
+        designation_id: hireForm.designation_id || null,
+        branch_id: hireForm.branch_id || null,
+        hired_at: hireForm.hired_at || null,
+        employment_status: 'active',
+      })
+      .select('id')
+      .single();
+
+    if (error || !employee) {
+      toast.error(error?.message || 'Failed to create employee');
+      setSaving(false);
+      return;
+    }
+
+    // Onboarding checklist — seeded with sensible defaults an admin
+    // can edit/extend afterwards; this isn't meant to be exhaustive,
+    // just a starting point so onboarding isn't a blank page.
+    await supabase.from('employee_onboarding_items').insert(
+      DEFAULT_ONBOARDING_ITEMS.map((title) => ({
+        account_id: accountId,
+        employee_id: employee.id,
+        title,
+      })),
+    );
+
+    const { error: linkErr } = await supabase
+      .from('candidates')
+      .update({ converted_employee_id: employee.id })
+      .eq('id', hireDialogCandidate.id);
+    if (linkErr) toast.error(linkErr.message || 'Employee created, but failed to link candidate');
+
+    toast.success(`${hireDialogCandidate.full_name} added as an employee`);
+    setHireDialogCandidate(null);
+    setHireForm({ department_id: '', designation_id: '', branch_id: '', hired_at: new Date().toISOString().slice(0, 10) });
+    await load();
+    setSaving(false);
+  };
+
   if (loading || profileLoading) {
     return (
       <div className="flex items-center justify-center py-16 text-muted-foreground">
@@ -497,6 +590,22 @@ export default function RecruitmentPage() {
                             >
                               <CalendarPlus className="size-4" />
                             </Button>
+                            {c.stage === 'hired' && !c.converted_employee_id && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setHireDialogCandidate(c)}
+                                title="Create employee"
+                                className="text-emerald-600 hover:text-emerald-600"
+                              >
+                                <UserPlus className="size-4" />
+                              </Button>
+                            )}
+                            {c.converted_employee_id && (
+                              <span className="flex items-center px-2 text-xs text-muted-foreground">
+                                Employee
+                              </span>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -786,6 +895,116 @@ export default function RecruitmentPage() {
             >
               {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Schedule
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={hireDialogCandidate !== null}
+        onOpenChange={(open) => !open && setHireDialogCandidate(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create employee</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <p className="text-sm text-muted-foreground">
+              {hireDialogCandidate?.full_name} — name, email, and phone carry over from their
+              candidate record.
+            </p>
+            <div className="space-y-2">
+              <Label>Department</Label>
+              <Select
+                value={hireForm.department_id || '__none__'}
+                onValueChange={(v) =>
+                  setHireForm((f) => ({ ...f, department_id: v === '__none__' || !v ? '' : v }))
+                }
+                disabled={saving}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">None</SelectItem>
+                  {departments.map((d) => (
+                    <SelectItem key={d.id} value={d.id}>
+                      {d.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Designation</Label>
+              <Select
+                value={hireForm.designation_id || '__none__'}
+                onValueChange={(v) =>
+                  setHireForm((f) => ({ ...f, designation_id: v === '__none__' || !v ? '' : v }))
+                }
+                disabled={saving}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">None</SelectItem>
+                  {designations.map((d) => (
+                    <SelectItem key={d.id} value={d.id}>
+                      {d.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Branch</Label>
+              <Select
+                value={hireForm.branch_id || '__none__'}
+                onValueChange={(v) =>
+                  setHireForm((f) => ({ ...f, branch_id: v === '__none__' || !v ? '' : v }))
+                }
+                disabled={saving}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">None</SelectItem>
+                  {branches.map((b) => (
+                    <SelectItem key={b.id} value={b.id}>
+                      {b.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="hire-date">Joining date</Label>
+              <Input
+                id="hire-date"
+                type="date"
+                value={hireForm.hired_at}
+                onChange={(e) => setHireForm((f) => ({ ...f, hired_at: e.target.value }))}
+                disabled={saving}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Creates a real employee record and a starter onboarding checklist (visible on the
+              Employees page).
+            </p>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setHireDialogCandidate(null)}
+              disabled={saving}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleCreateEmployee} disabled={saving}>
+              {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Create employee
             </Button>
           </DialogFooter>
         </DialogContent>

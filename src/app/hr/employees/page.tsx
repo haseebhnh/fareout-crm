@@ -56,7 +56,10 @@ import {
   MoreHorizontal,
   Pencil,
   Trash2,
+  ListChecks,
+  Check,
 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 
 interface Department {
@@ -85,6 +88,12 @@ interface Employee {
   branch_id: string | null;
   employment_status: 'active' | 'on_leave' | 'terminated';
   hired_at: string | null;
+}
+
+interface OnboardingItem {
+  id: string;
+  title: string;
+  is_done: boolean;
 }
 
 const STATUS_LABEL: Record<Employee['employment_status'], string> = {
@@ -136,6 +145,10 @@ export default function HrEmployeesPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<EmployeeFormState>(EMPTY_FORM);
+
+  const [onboardingEmployee, setOnboardingEmployee] = useState<Employee | null>(null);
+  const [onboardingItems, setOnboardingItems] = useState<OnboardingItem[]>([]);
+  const [onboardingLoading, setOnboardingLoading] = useState(false);
 
   const load = useCallback(async () => {
     if (!accountId) return;
@@ -246,6 +259,32 @@ export default function HrEmployeesPage() {
     }
   };
 
+  const openOnboarding = async (employee: Employee) => {
+    setOnboardingEmployee(employee);
+    setOnboardingLoading(true);
+    const { data, error } = await supabase
+      .from('employee_onboarding_items')
+      .select('id, title, is_done')
+      .eq('employee_id', employee.id)
+      .order('created_at', { ascending: true });
+    if (error) toast.error('Failed to load onboarding checklist');
+    setOnboardingItems((data as OnboardingItem[]) ?? []);
+    setOnboardingLoading(false);
+  };
+
+  const handleToggleOnboarding = async (item: OnboardingItem) => {
+    const { error } = await supabase
+      .from('employee_onboarding_items')
+      .update({ is_done: !item.is_done })
+      .eq('id', item.id);
+    if (error) toast.error(error.message || 'Failed to update item');
+    else {
+      setOnboardingItems((prev) =>
+        prev.map((i) => (i.id === item.id ? { ...i, is_done: !i.is_done } : i)),
+      );
+    }
+  };
+
   if (loading || profileLoading) {
     return (
       <div className="flex items-center justify-center py-16 text-muted-foreground">
@@ -321,6 +360,9 @@ export default function HrEmployeesPage() {
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => openEdit(employee)}>
                             <Pencil className="size-4" /> Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => openOnboarding(employee)}>
+                            <ListChecks className="size-4" /> Onboarding
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => handleDelete(employee)}
@@ -501,6 +543,50 @@ export default function HrEmployeesPage() {
             <Button onClick={handleSave} disabled={saving}>
               {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={onboardingEmployee !== null}
+        onOpenChange={(open) => !open && setOnboardingEmployee(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{onboardingEmployee?.full_name} — Onboarding</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            {onboardingLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="size-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : onboardingItems.length === 0 ? (
+              <p className="py-8 text-center text-sm text-muted-foreground">
+                No onboarding checklist for this employee — only candidates converted via
+                Recruitment get one automatically.
+              </p>
+            ) : (
+              onboardingItems.map((item) => (
+                <label
+                  key={item.id}
+                  className="flex items-center gap-3 rounded-lg border border-border p-3 text-sm"
+                >
+                  <Checkbox
+                    checked={item.is_done}
+                    onCheckedChange={() => handleToggleOnboarding(item)}
+                  />
+                  <span className={item.is_done ? 'text-muted-foreground line-through' : 'text-foreground'}>
+                    {item.title}
+                  </span>
+                  {item.is_done && <Check className="ml-auto size-4 text-emerald-600" />}
+                </label>
+              ))
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOnboardingEmployee(null)}>
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>
