@@ -172,13 +172,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // account name lookup itself can't.
         let accountRow: AccountSummary | null = null;
         if (data.account_id) {
-          const { data: account, error: accountErr } = await supabase
+          let { data: account, error: accountErr } = await supabase
             .from("accounts")
             // default_currency added in migration 021; narrowed to the
             // USD fallback below for older schemas where it reads null.
             .select("id, name, default_currency, enabled_products")
             .eq("id", data.account_id)
             .maybeSingle();
+
+          // 42703 = undefined_column. Same rollout-window guard as
+          // getCurrentAccount() server-side: enabled_products (043) may
+          // not have been migrated on this DB yet — retry without it
+          // rather than dropping name/default_currency too, which would
+          // otherwise blank the account name and currency everywhere
+          // just because the product-switcher column isn't there yet.
+          if (accountErr?.code === "42703") {
+            const fallback = await supabase
+              .from("accounts")
+              .select("id, name, default_currency")
+              .eq("id", data.account_id)
+              .maybeSingle();
+            account = fallback.data
+              ? { ...fallback.data, enabled_products: null }
+              : null;
+            accountErr = fallback.error;
+          }
+
           if (accountErr) {
             console.error("[AuthProvider] fetchAccount error:", {
               message: accountErr.message,
@@ -191,7 +210,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               id: account.id,
               name: account.name,
               default_currency: account.default_currency ?? DEFAULT_CURRENCY,
-              enabled_products: account.enabled_products ?? [],
+              enabled_products: account.enabled_products ?? ["crm"],
             };
           }
         }

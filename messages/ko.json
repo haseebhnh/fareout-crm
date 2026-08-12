@@ -58,7 +58,10 @@
     "defaultAvatar": "아바타",
     "menuProfile": "프로필",
     "menuSettings": "설정",
-    "menuSignOut": "로그아웃"
+    "menuSignOut": "로그아웃",
+    "productSwitcher": "제품 전환",
+    "productComingSoon": "{product}은(는) 곧 제공됩니다",
+    "productLocked": "{product}은(는) 이 계정에서 사용할 수 없습니다 — 업그레이드하려면 관리자에게 문의하세요"
   },
   "ModeToggle": {
     "switchMode": "{mode} 모드로 전환"

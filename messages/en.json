@@ -58,7 +58,10 @@
     "defaultAvatar": "Avatar",
     "menuProfile": "Profile",
     "menuSettings": "Settings",
-    "menuSignOut": "Sign out"
+    "menuSignOut": "Sign out",
+    "productSwitcher": "Switch product",
+    "productComingSoon": "{product} is coming soon",
+    "productLocked": "{product} is not enabled for this account — contact your admin to upgrade"
   },
   "ModeToggle": {
     "switchMode": "Switch to {mode} mode"

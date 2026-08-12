@@ -148,11 +148,31 @@ export async function getCurrentAccount(): Promise<AccountContext> {
   // and takes down the entire account context (issue #294). A lookup by
   // id needs no relationship inference and is gated by the same accounts
   // RLS, so it stays robust against cache staleness and older schemas.
-  const { data: account, error: accountErr } = await supabase
+  let { data: account, error: accountErr } = await supabase
     .from("accounts")
     .select("id, name, enabled_products")
     .eq("id", data.account_id)
     .maybeSingle();
+
+  // 42703 = undefined_column. `enabled_products` was added in migration
+  // 043; on a deploy that lands before that migration has been run
+  // against this DB, the combined select above 400s and would
+  // otherwise take down EVERY page's account context (not just the
+  // product switcher), since this function is the shared account
+  // lookup for the whole app. Retry without the new column so the app
+  // keeps working through that rollout window — 'crm' is the correct
+  // default anyway (every account effectively has it today).
+  if (accountErr?.code === "42703") {
+    const fallback = await supabase
+      .from("accounts")
+      .select("id, name")
+      .eq("id", data.account_id)
+      .maybeSingle();
+    account = fallback.data
+      ? { ...fallback.data, enabled_products: null }
+      : null;
+    accountErr = fallback.error;
+  }
 
   if (accountErr) {
     console.error("[getCurrentAccount] account fetch error:", accountErr);
@@ -172,7 +192,7 @@ export async function getCurrentAccount(): Promise<AccountContext> {
     account: {
       id: account.id,
       name: account.name,
-      enabledProducts: (account.enabled_products as string[] | null) ?? [],
+      enabledProducts: (account.enabled_products as string[] | null) ?? ["crm"],
     },
   };
 }
