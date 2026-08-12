@@ -69,6 +69,11 @@ const TENANT_SCOPED_TABLES = [
   "channel_identities",
   "ai_configs",
   "ai_usage_log",
+  "account_invitations",
+  "ai_knowledge_chunks",
+  "ai_knowledge_documents",
+  "audit_log",
+  "member_presence",
 ] as const;
 
 describe("tenant isolation — structural guarantees", () => {

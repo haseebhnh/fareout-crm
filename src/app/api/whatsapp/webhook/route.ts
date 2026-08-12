@@ -688,6 +688,23 @@ async function processMessage(
     .eq('sender_type', 'customer')
   const isFirstInboundMessage = (priorCustomerMsgCount ?? 0) === 0
 
+  // Meta redelivers a webhook event when our ack is slow or dropped.
+  // Without this check a retry double-inserts the message and
+  // double-fires automations/flows/AI-reply for the same text. The
+  // partial unique index in migration 041 backstops this against a
+  // concurrent race; this check just avoids a noisy insert error on
+  // the (far more common) sequential-retry case.
+  const { data: existingMessage } = await supabaseAdmin()
+    .from('messages')
+    .select('id')
+    .eq('conversation_id', conversation.id)
+    .eq('message_id', message.id)
+    .maybeSingle()
+  if (existingMessage) {
+    console.warn('[webhook] duplicate delivery, skipping:', message.id)
+    return
+  }
+
   const { error: msgError } = await supabaseAdmin().from('messages').insert({
     conversation_id: conversation.id,
     sender_type: 'customer',

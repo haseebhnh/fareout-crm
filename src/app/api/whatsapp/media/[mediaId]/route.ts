@@ -48,6 +48,25 @@ export async function GET(
       )
     }
 
+    // Ownership check: this route is a proxy in front of Meta's media
+    // API, keyed only by mediaId — without this, any authenticated user
+    // of ANY tenant could pull any other tenant's media by guessing or
+    // observing a mediaId, since Meta's API itself doesn't enforce
+    // per-caller-account scoping (that's on us). Query through the
+    // caller's own RLS-scoped client (not the service-role client
+    // used below), so a message from another account simply doesn't
+    // come back regardless of this explicit filter — this is
+    // belt-and-braces on top of that.
+    const { data: owningMessage } = await supabase
+      .from('messages')
+      .select('id')
+      .eq('media_url', `/api/whatsapp/media/${mediaId}`)
+      .limit(1)
+      .maybeSingle()
+    if (!owningMessage) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
+
     // Fetch and decrypt WhatsApp config
     const { data: config, error: configError } = await supabase
       .from('whatsapp_config')
