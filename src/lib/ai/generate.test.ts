@@ -192,3 +192,72 @@ describe('generateReply — Anthropic', () => {
     expect(body.messages).toHaveLength(1)
   })
 })
+
+describe('generateReply — Gemini', () => {
+  it('calls generateContent with the key as a query param and maps assistant -> model', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      okResponse({
+        candidates: [{ content: { parts: [{ text: 'Hi there!' }] } }],
+        usageMetadata: {
+          promptTokenCount: 20,
+          candidatesTokenCount: 4,
+          totalTokenCount: 24,
+        },
+      }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const res = await generateReply({
+      config: config({ provider: 'gemini', model: 'gemini-2.5-flash', apiKey: 'AIza-x' }),
+      systemPrompt: 'sys',
+      messages: [
+        { role: 'assistant', content: 'Welcome!' },
+        { role: 'user', content: 'Hi' },
+      ],
+    })
+
+    expect(res).toEqual({
+      text: 'Hi there!',
+      handoff: false,
+      usage: { promptTokens: 20, completionTokens: 4, totalTokens: 24 },
+    })
+    const [url, opts] = fetchMock.mock.calls[0]
+    expect(url).toContain('generativelanguage.googleapis.com')
+    expect(url).toContain('key=AIza-x')
+    const body = JSON.parse(opts.body)
+    expect(body.contents[0].role).toBe('model')
+    expect(body.contents[1].role).toBe('user')
+    expect(body.systemInstruction.parts[0].text).toBe('sys')
+  })
+
+  it('maps a 401 to an invalid_key AiError', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        errResponse(401, { error: { message: 'API key not valid' } }),
+      ),
+    )
+
+    await expect(
+      generateReply({
+        config: config({ provider: 'gemini' }),
+        systemPrompt: 'sys',
+        messages: [{ role: 'user', content: 'Hi' }],
+      }),
+    ).rejects.toMatchObject({ code: 'invalid_key', status: 401 })
+  })
+
+  it('throws on an empty response', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(okResponse({ candidates: [{ content: { parts: [{ text: '' }] } }] })),
+    )
+    await expect(
+      generateReply({
+        config: config({ provider: 'gemini' }),
+        systemPrompt: 'sys',
+        messages: [{ role: 'user', content: 'Hi' }],
+      }),
+    ).rejects.toBeInstanceOf(AiError)
+  })
+})
