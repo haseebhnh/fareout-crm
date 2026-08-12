@@ -40,7 +40,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Briefcase, Users, Plus, Loader2, CalendarPlus } from 'lucide-react';
+import { Briefcase, Users, Plus, Loader2, CalendarPlus, Download } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface JobOpening {
@@ -59,6 +59,28 @@ interface Candidate {
   source: string | null;
   job_opening_id: string | null;
   stage: string;
+  resume_storage_path: string | null;
+}
+
+const SOURCES = ['manual', 'email', 'whatsapp', 'website', 'referral', 'job_portal'] as const;
+const SOURCE_LABEL: Record<string, string> = {
+  manual: 'Manual upload',
+  email: 'Email',
+  whatsapp: 'WhatsApp',
+  website: 'Website',
+  referral: 'Referral',
+  job_portal: 'Job portal',
+};
+
+function buildCvPath(accountId: string, fileName: string): string {
+  const hasExt = /\.[^.]+$/.test(fileName);
+  const ext = hasExt ? fileName.split('.').pop()!.toLowerCase() : 'pdf';
+  const safeBase =
+    fileName
+      .replace(/\.[^.]+$/, '')
+      .replace(/[^a-zA-Z0-9_-]+/g, '_')
+      .slice(0, 40) || 'cv';
+  return `account-${accountId}/${Date.now()}-${safeBase}.${ext}`;
 }
 
 interface Interview {
@@ -110,9 +132,10 @@ export default function RecruitmentPage() {
     full_name: '',
     email: '',
     phone: '',
-    source: '',
+    source: 'manual',
     job_opening_id: '',
   });
+  const [cvFile, setCvFile] = useState<File | null>(null);
   const [interviewForm, setInterviewForm] = useState({
     scheduled_at: '',
     type: 'video',
@@ -131,7 +154,7 @@ export default function RecruitmentPage() {
           .order('created_at', { ascending: false }),
         supabase
           .from('candidates')
-          .select('id, full_name, email, phone, source, job_opening_id, stage')
+          .select('id, full_name, email, phone, source, job_opening_id, stage, resume_storage_path')
           .order('created_at', { ascending: false }),
       ]);
       setJobs((jobRes.data as JobOpening[]) ?? []);
@@ -178,28 +201,121 @@ export default function RecruitmentPage() {
     setSaving(false);
   };
 
+  // Priority per spec: email, then phone. Both are optional fields, so
+  // this only runs the checks that have something to match against —
+  // an empty string would otherwise match every candidate with a null
+  // email/phone, which is the opposite of a duplicate check.
+  const findExistingCandidate = async (): Promise<Candidate | null> => {
+    const email = candidateForm.email.trim();
+    const phone = candidateForm.phone.trim();
+    if (!email && !phone) return null;
+
+    let query = supabase
+      .from('candidates')
+      .select('id, full_name, email, phone, source, job_opening_id, stage, resume_storage_path');
+    if (email && phone) query = query.or(`email.eq.${email},phone.eq.${phone}`);
+    else if (email) query = query.eq('email', email);
+    else query = query.eq('phone', phone);
+
+    const { data } = await query.limit(1).maybeSingle();
+    return (data as Candidate) ?? null;
+  };
+
+  const uploadCvIfAny = async (): Promise<string | null> => {
+    if (!cvFile || !accountId) return null;
+    const path = buildCvPath(accountId, cvFile.name);
+    const { error } = await supabase.storage.from('candidate-cvs').upload(path, cvFile);
+    if (error) {
+      toast.error(error.message || 'CV upload failed');
+      return null;
+    }
+    return path;
+  };
+
+  const resetCandidateForm = () => {
+    setCandidateForm({ full_name: '', email: '', phone: '', source: 'manual', job_opening_id: '' });
+    setCvFile(null);
+  };
+
   const handleCreateCandidate = async () => {
     if (!candidateForm.full_name.trim()) {
       toast.error('Name is required');
       return;
     }
     setSaving(true);
+
+    const existing = await findExistingCandidate();
+
+    if (existing) {
+      // Rule #9: do not create a duplicate candidate. If they're
+      // applying for a (different) job, that's a new application
+      // against the SAME candidate row — candidate_applications'
+      // UNIQUE(candidate_id, job_opening_id) also backstops this at
+      // the database level if this check ever races.
+      if (!candidateForm.job_opening_id) {
+        toast.error(
+          `${existing.full_name} already exists as a candidate. Select a job to add a new application, or open their existing record to update it.`,
+        );
+        setSaving(false);
+        return;
+      }
+      if (existing.job_opening_id === candidateForm.job_opening_id) {
+        toast.error(`${existing.full_name} has already applied for this job.`);
+        setSaving(false);
+        return;
+      }
+      const cvPath = await uploadCvIfAny();
+      const { error } = await supabase.from('candidate_applications').insert({
+        account_id: accountId,
+        candidate_id: existing.id,
+        job_opening_id: candidateForm.job_opening_id,
+        source: candidateForm.source || null,
+      });
+      if (cvPath) {
+        await supabase.from('candidates').update({ resume_storage_path: cvPath }).eq('id', existing.id);
+      }
+      if (error) {
+        toast.error(error.message || 'Failed to add application');
+      } else {
+        toast.success(`Existing candidate matched — new application added for ${existing.full_name}`);
+        setCandidateDialogOpen(false);
+        resetCandidateForm();
+        await load();
+      }
+      setSaving(false);
+      return;
+    }
+
+    const cvPath = await uploadCvIfAny();
     const { error } = await supabase.from('candidates').insert({
       account_id: accountId,
       full_name: candidateForm.full_name.trim(),
       email: candidateForm.email.trim() || null,
       phone: candidateForm.phone.trim() || null,
-      source: candidateForm.source.trim() || null,
+      source: candidateForm.source || null,
       job_opening_id: candidateForm.job_opening_id || null,
+      resume_storage_path: cvPath,
     });
     if (error) toast.error(error.message || 'Failed to add candidate');
     else {
       toast.success('Candidate added');
       setCandidateDialogOpen(false);
-      setCandidateForm({ full_name: '', email: '', phone: '', source: '', job_opening_id: '' });
+      resetCandidateForm();
       await load();
     }
     setSaving(false);
+  };
+
+  const handleDownloadCv = async (candidate: Candidate) => {
+    if (!candidate.resume_storage_path) return;
+    const { data, error } = await supabase.storage
+      .from('candidate-cvs')
+      .createSignedUrl(candidate.resume_storage_path, 60);
+    if (error || !data) {
+      toast.error('Failed to generate download link');
+      return;
+    }
+    window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
   };
 
   const handleStageChange = async (candidate: Candidate, stage: string) => {
@@ -343,7 +459,7 @@ export default function RecruitmentPage() {
                         <TableCell className="text-muted-foreground">
                           {c.email || c.phone || '—'}
                         </TableCell>
-                        <TableCell>{c.source || '—'}</TableCell>
+                        <TableCell>{SOURCE_LABEL[c.source ?? ''] ?? c.source ?? '—'}</TableCell>
                         <TableCell>
                           <Select
                             value={c.stage}
@@ -362,13 +478,26 @@ export default function RecruitmentPage() {
                           </Select>
                         </TableCell>
                         <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setInterviewDialogOpen(c.id)}
-                          >
-                            <CalendarPlus className="size-4" />
-                          </Button>
+                          <div className="flex gap-1">
+                            {c.resume_storage_path && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDownloadCv(c)}
+                                title="Download CV"
+                              >
+                                <Download className="size-4" />
+                              </Button>
+                            )}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setInterviewDialogOpen(c.id)}
+                              title="Schedule interview"
+                            >
+                              <CalendarPlus className="size-4" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -522,12 +651,31 @@ export default function RecruitmentPage() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="cand-source">Source</Label>
-              <Input
-                id="cand-source"
+              <Label>Source</Label>
+              <Select
                 value={candidateForm.source}
-                onChange={(e) => setCandidateForm((f) => ({ ...f, source: e.target.value }))}
-                placeholder="e.g. LinkedIn, referral"
+                onValueChange={(v) => v && setCandidateForm((f) => ({ ...f, source: v }))}
+                disabled={saving}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {SOURCES.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {SOURCE_LABEL[s]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="cand-cv">CV</Label>
+              <Input
+                id="cand-cv"
+                type="file"
+                accept=".pdf,.doc,.docx"
+                onChange={(e) => setCvFile(e.target.files?.[0] ?? null)}
                 disabled={saving}
               />
             </div>

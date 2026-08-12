@@ -90,6 +90,7 @@ const TENANT_SCOPED_TABLES = [
   "performance_reviews",
   "employee_documents",
   "branches",
+  "candidate_applications",
 ] as const;
 
 describe("tenant isolation — structural guarantees", () => {
@@ -311,6 +312,32 @@ describe("HR — self-vs-admin scoping (§26: employee A must not see employee B
     );
     expect(sql).toMatch(
       /CREATE POLICY attendance_update_manager ON attendance_records FOR UPDATE USING \(\s*is_manager_of\(employee_id\)\s*\)/i,
+    );
+  });
+
+  it("candidate_applications keeps candidates.stage/job_opening_id synced via a pinned-search-path trigger", () => {
+    // The existing /hr/recruitment pipeline UI reads candidates.stage
+    // directly and was NOT rewritten to know about the new
+    // candidate_applications table (rule: don't touch the existing
+    // pipeline) — this trigger is what makes a new-channel application
+    // show up there without any UI change.
+    const fn = sql.match(
+      /CREATE OR REPLACE FUNCTION sync_candidate_primary_application[\s\S]*?\$\$;/i,
+    );
+    expect(fn, "sync_candidate_primary_application is missing").not.toBeNull();
+    expect(fn![0]).toMatch(/SECURITY DEFINER/i);
+    expect(fn![0]).toMatch(/SET search_path\s*=\s*public/i);
+    expect(sql).toMatch(
+      /CREATE TRIGGER trg_sync_candidate_primary_application\s+AFTER INSERT OR UPDATE ON candidate_applications/i,
+    );
+  });
+
+  it("one candidate cannot have two applications to the same job", () => {
+    // The concrete expression of "one candidate may apply to multiple
+    // jobs... do not duplicate the person" — re-applying to the SAME
+    // opening must update, not fork, a second application row.
+    expect(sql).toMatch(
+      /CREATE TABLE IF NOT EXISTS candidate_applications[\s\S]*?UNIQUE\s*\(\s*candidate_id\s*,\s*job_opening_id\s*\)/i,
     );
   });
 });
