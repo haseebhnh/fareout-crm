@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { decrypt } from '@/lib/whatsapp/encryption';
 import { sendMetaMessage } from '@/lib/channels/meta-messaging';
+import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from '@/lib/rate-limit';
 
 /**
  * Send an agent reply on a non-WhatsApp channel.
@@ -40,6 +41,9 @@ export async function POST(request: Request) {
   if (authError || !user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+
+  const limit = checkRateLimit(`send:channel:${user.id}`, RATE_LIMITS.send);
+  if (!limit.success) return rateLimitResponse(limit);
 
   const body = await request.json().catch(() => ({}));
   const { conversation_id, text } = body;

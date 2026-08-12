@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { encrypt } from '@/lib/whatsapp/encryption';
+import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from '@/lib/rate-limit';
 
 /**
  * Channel connections — list and upsert.
@@ -78,6 +79,9 @@ export async function POST(request: Request) {
       { status: 403 },
     );
   }
+
+  const limit = checkRateLimit(`admin:channelConnect:${user.id}`, RATE_LIMITS.adminAction);
+  if (!limit.success) return rateLimitResponse(limit);
 
   const body = await request.json().catch(() => ({}));
   const { channel, external_id, display_name, access_token, app_secret } = body;
@@ -182,6 +186,9 @@ export async function DELETE(request: Request) {
   if (authError || !user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+
+  const limit = checkRateLimit(`admin:channelDisconnect:${user.id}`, RATE_LIMITS.adminAction);
+  if (!limit.success) return rateLimitResponse(limit);
 
   const channel = new URL(request.url).searchParams.get('channel');
   if (!isConnectable(channel)) {

@@ -8,6 +8,7 @@ import {
 } from '@/lib/whatsapp/meta-api'
 import { encrypt, decrypt } from '@/lib/whatsapp/encryption'
 import { logAuditEvent, requestMetadata } from '@/lib/audit/log'
+import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from '@/lib/rate-limit'
 
 /**
  * Resolve the caller's account_id from their profile. Inlined here
@@ -184,6 +185,9 @@ export async function POST(request: Request) {
         { status: 403 },
       )
     }
+
+    const limit = checkRateLimit(`admin:whatsappConfigUpdate:${user.id}`, RATE_LIMITS.adminAction)
+    if (!limit.success) return rateLimitResponse(limit)
 
     const body = await request.json()
     const {
@@ -560,6 +564,9 @@ export async function DELETE(request: Request) {
         { status: 403 },
       )
     }
+
+    const limit = checkRateLimit(`admin:whatsappConfigReset:${user.id}`, RATE_LIMITS.adminAction)
+    if (!limit.success) return rateLimitResponse(limit)
 
     const { data: before } = await supabase
       .from('whatsapp_config')

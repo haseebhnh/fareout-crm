@@ -11,6 +11,7 @@ import {
   validateStepsForActivation,
   validateTriggerForActivation,
 } from '@/lib/automations/validate'
+import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from '@/lib/rate-limit'
 
 async function requireUser() {
   const supabase = await createClient()
@@ -53,7 +54,9 @@ export async function PATCH(
   // requires `agent`, but this route mutates via the service-role client
   // which bypasses RLS, so enforce the role here.
   try {
-    await requireRole('agent')
+    const ctx = await requireRole('agent')
+    const limit = checkRateLimit(`admin:automationUpdate:${ctx.userId}`, RATE_LIMITS.adminAction)
+    if (!limit.success) return rateLimitResponse(limit)
   } catch (err) {
     return toErrorResponse(err)
   }
@@ -140,7 +143,9 @@ export async function DELETE(
   // Deleting an automation is a write — enforce `agent` (the service-role
   // client below bypasses the agent-gated automations_delete RLS).
   try {
-    await requireRole('agent')
+    const ctx = await requireRole('agent')
+    const limit = checkRateLimit(`admin:automationDelete:${ctx.userId}`, RATE_LIMITS.adminAction)
+    if (!limit.success) return rateLimitResponse(limit)
   } catch (err) {
     return toErrorResponse(err)
   }

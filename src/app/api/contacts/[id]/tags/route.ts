@@ -6,6 +6,7 @@ import {
   ContactTagWriteError,
   removeContactTag,
 } from '@/lib/contacts/tag-write';
+import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from '@/lib/rate-limit';
 
 function tagWriteErrorResponse(error: ContactTagWriteError): NextResponse {
   return NextResponse.json({ error: error.message }, { status: error.status });
@@ -26,6 +27,8 @@ export async function POST(
 ) {
   try {
     const ctx = await requireRole('agent');
+    const limit = checkRateLimit(`admin:contactTagAdd:${ctx.userId}`, RATE_LIMITS.adminAction);
+    if (!limit.success) return rateLimitResponse(limit);
     const { id: contactId } = await params;
     const tagId = await readTagId(request);
     if (!tagId) {
@@ -54,6 +57,8 @@ export async function DELETE(
 ) {
   try {
     const ctx = await requireRole('agent');
+    const limit = checkRateLimit(`admin:contactTagRemove:${ctx.userId}`, RATE_LIMITS.adminAction);
+    if (!limit.success) return rateLimitResponse(limit);
     const { id: contactId } = await params;
     const tagId = await readTagId(request);
     if (!tagId) {

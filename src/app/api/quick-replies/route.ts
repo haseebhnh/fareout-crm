@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getCurrentAccount, requireRole, toErrorResponse } from '@/lib/auth/account'
 import { supabaseAdmin } from '@/lib/automations/admin-client'
 import { validateInteractivePayload } from '@/lib/whatsapp/interactive'
+import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from '@/lib/rate-limit'
 
 // Quick replies — reusable snippets (plain text or a saved interactive
 // message) shared across the account. GET lists; POST creates. Mirrors
@@ -30,6 +31,9 @@ export async function POST(request: Request) {
   } catch (err) {
     return toErrorResponse(err)
   }
+
+  const limit = checkRateLimit(`admin:quickReplyCreate:${ctx.userId}`, RATE_LIMITS.adminAction)
+  if (!limit.success) return rateLimitResponse(limit)
 
   const body = await request.json().catch(() => null)
   if (!body) return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })

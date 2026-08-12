@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { decrypt } from '@/lib/whatsapp/encryption'
 import { normalizeStatus } from '@/lib/whatsapp/template-status-normalize'
+import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from '@/lib/rate-limit'
 import type { TemplateButton, TemplateSampleValues } from '@/types'
 
 /**
@@ -149,6 +150,9 @@ export async function POST() {
         { status: 403 },
       )
     }
+
+    const limit = checkRateLimit(`admin:templateSync:${user.id}`, RATE_LIMITS.adminAction)
+    if (!limit.success) return rateLimitResponse(limit)
 
     const { data: config, error: configError } = await supabase
       .from('whatsapp_config')

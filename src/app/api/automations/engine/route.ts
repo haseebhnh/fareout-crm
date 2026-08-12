@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { requireRole, toErrorResponse } from '@/lib/auth/account'
 import { runAutomationsForTrigger } from '@/lib/automations/engine'
 import type { AutomationTriggerType } from '@/types'
+import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from '@/lib/rate-limit'
 
 /**
  * Manual trigger for testing or for external integrations that want
@@ -15,6 +16,8 @@ export async function POST(request: Request) {
   try {
     const ctx = await requireRole('agent')
     accountId = ctx.accountId
+    const limit = checkRateLimit(`send:automationTrigger:${ctx.userId}`, RATE_LIMITS.send)
+    if (!limit.success) return rateLimitResponse(limit)
   } catch (err) {
     return toErrorResponse(err)
   }

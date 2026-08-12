@@ -11,6 +11,7 @@ import {
 } from '@/lib/whatsapp/template-validators'
 import { buildMetaTemplatePayload } from '@/lib/whatsapp/template-components'
 import { ensureImageHeaderHandle } from '@/lib/whatsapp/template-header-handle'
+import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from '@/lib/rate-limit'
 
 /**
  * Per-template lifecycle endpoint.
@@ -79,6 +80,9 @@ export async function PATCH(
         { status: 403 },
       )
     }
+
+    const limit = checkRateLimit(`admin:templateUpdate:${user.id}`, RATE_LIMITS.adminAction)
+    if (!limit.success) return rateLimitResponse(limit)
 
     let payload: TemplatePayload
     try {
@@ -266,6 +270,9 @@ export async function DELETE(
         { status: 403 },
       )
     }
+
+    const limit = checkRateLimit(`admin:templateDelete:${user.id}`, RATE_LIMITS.adminAction)
+    if (!limit.success) return rateLimitResponse(limit)
 
     const { data: existing, error: lookupErr } = await supabase
       .from('message_templates')

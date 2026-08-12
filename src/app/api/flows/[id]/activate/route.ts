@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { requireRole, toErrorResponse } from '@/lib/auth/account'
 import { supabaseAdmin } from '@/lib/flows/admin-client'
 import { validateFlowForActivation } from '@/lib/flows/validate'
+import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from '@/lib/rate-limit'
 
 /**
  * POST /api/flows/[id]/activate
@@ -29,7 +30,9 @@ export async function POST(
   // below bypasses RLS, so enforce the role here (a viewer passes the
   // membership-only ownership check).
   try {
-    await requireRole('agent')
+    const ctx = await requireRole('agent')
+    const limit = checkRateLimit(`admin:flowActivate:${ctx.userId}`, RATE_LIMITS.adminAction)
+    if (!limit.success) return rateLimitResponse(limit)
   } catch (err) {
     return toErrorResponse(err)
   }

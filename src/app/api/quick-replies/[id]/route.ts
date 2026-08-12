@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { requireRole, toErrorResponse } from '@/lib/auth/account'
 import { supabaseAdmin } from '@/lib/automations/admin-client'
 import { validateInteractivePayload } from '@/lib/whatsapp/interactive'
+import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from '@/lib/rate-limit'
 
 // Update / delete a single quick reply. Quick replies are account-
 // shared, so every mutation is scoped by `account_id` (the service-role
@@ -19,6 +20,9 @@ export async function PATCH(
   } catch (err) {
     return toErrorResponse(err)
   }
+
+  const limit = checkRateLimit(`admin:quickReplyUpdate:${ctx.userId}`, RATE_LIMITS.adminAction)
+  if (!limit.success) return rateLimitResponse(limit)
 
   const body = await request.json().catch(() => null)
   if (!body) return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
@@ -92,6 +96,9 @@ export async function DELETE(
   } catch (err) {
     return toErrorResponse(err)
   }
+
+  const limit = checkRateLimit(`admin:quickReplyDelete:${ctx.userId}`, RATE_LIMITS.adminAction)
+  if (!limit.success) return rateLimitResponse(limit)
 
   const { error } = await supabaseAdmin()
     .from('quick_replies')
