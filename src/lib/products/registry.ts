@@ -40,11 +40,17 @@ export interface ProductDefinition {
   subdomain: string
   label: string
   status: ProductStatus
+  /** In-app route to land on when clicked, for the single-deployment
+   *  reality today (subdomain routing per rule #5/§22 is not built —
+   *  everything serves from one Next.js instance). Undefined for a
+   *  product with no routes yet, so the switcher has nothing to link
+   *  to even if a future `enabled_products` entry somehow unlocked it. */
+  path?: string
 }
 
 export const PRODUCTS: readonly ProductDefinition[] = [
-  { id: 'crm', subdomain: 'crm.ootrix.com', label: 'CRM', status: 'available' },
-  { id: 'hr', subdomain: 'hr.ootrix.com', label: 'HR', status: 'planned' },
+  { id: 'crm', subdomain: 'crm.ootrix.com', label: 'CRM', status: 'available', path: '/dashboard' },
+  { id: 'hr', subdomain: 'hr.ootrix.com', label: 'HR', status: 'available', path: '/hr' },
   { id: 'staff', subdomain: 'staff.ootrix.com', label: 'Staff', status: 'planned' },
   { id: 'task', subdomain: 'task.ootrix.com', label: 'Tasks', status: 'planned' },
   { id: 'sales', subdomain: 'sales.ootrix.com', label: 'Sales', status: 'planned' },

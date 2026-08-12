@@ -249,4 +249,23 @@ describe("HR — self-vs-admin scoping (§26: employee A must not see employee B
       /CREATE TRIGGER goals_restrict_self_update\s+BEFORE UPDATE ON goals/i,
     );
   });
+
+  it("HR notification triggers are SECURITY DEFINER with a pinned search_path", () => {
+    // Same privilege-escalation concern as is_account_member (§9's
+    // guard test) — these functions write into `notifications`, whose
+    // table itself has no client INSERT policy specifically so rows
+    // can only come from a trusted, pinned-search-path function.
+    for (const fnName of ["notify_leave_decision", "notify_shift_assigned"]) {
+      const fn = sql.match(
+        new RegExp(`CREATE OR REPLACE FUNCTION ${fnName}[\\s\\S]*?\\$\\$;`, "i"),
+      );
+      expect(fn, `${fnName} is missing`).not.toBeNull();
+      expect(fn![0]).toMatch(/SECURITY DEFINER/i);
+      expect(fn![0]).toMatch(/SET search_path\s*=\s*public/i);
+    }
+    expect(sql).toMatch(/CREATE TRIGGER trg_notify_leave_decision\s+AFTER UPDATE ON leave_requests/i);
+    expect(sql).toMatch(
+      /CREATE TRIGGER trg_notify_shift_assigned\s+AFTER INSERT OR UPDATE ON roster_assignments/i,
+    );
+  });
 });

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { LayoutGrid, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
@@ -47,9 +48,25 @@ export function ProductSwitcher() {
         {PRODUCTS.map((product) => {
           const unlocked = product.status === "available" && enabled.has(product.id);
           if (unlocked) {
+            // No route yet even though the account has it enabled
+            // (shouldn't happen — enabled_products for a product with
+            // no path is a data inconsistency — but render inert
+            // rather than link nowhere).
+            if (!product.path) {
+              return (
+                <DropdownMenuItem
+                  key={product.id}
+                  disabled
+                  className="text-popover-foreground"
+                >
+                  {product.label}
+                </DropdownMenuItem>
+              );
+            }
             return (
               <DropdownMenuItem
                 key={product.id}
+                render={<Link href={product.path} />}
                 className="text-popover-foreground focus:bg-accent focus:text-accent-foreground"
               >
                 {product.label}

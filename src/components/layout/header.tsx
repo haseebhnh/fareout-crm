@@ -37,7 +37,17 @@ const pageTitles: Record<string, string> = {
   "/automations": "automations",
   "/flows": "flows",
   "/agents": "aiAgents",
-  "/hr": "hrEmployees",
+  "/hr": "hrDashboard",
+  "/hr/employees": "hrEmployees",
+  "/hr/attendance": "hrAttendance",
+  "/hr/leave": "hrLeave",
+  "/hr/shifts": "hrShifts",
+  "/hr/roster": "hrRoster",
+  "/hr/holidays": "hrHolidays",
+  "/hr/recruitment": "hrRecruitment",
+  "/hr/performance": "hrPerformance",
+  "/hr/documents": "hrDocuments",
+  "/hr/reports": "hrReports",
   "/settings": "settings",
 };
 

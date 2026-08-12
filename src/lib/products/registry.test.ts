@@ -2,9 +2,15 @@ import { describe, expect, it } from 'vitest'
 import { PRODUCTS, getProduct, productForHost, isProductId } from './registry'
 
 describe('PRODUCTS', () => {
-  it('has exactly one available product today: crm', () => {
+  it('has exactly the available products with a real, complete implementation: crm, hr', () => {
     const available = PRODUCTS.filter((p) => p.status === 'available')
-    expect(available.map((p) => p.id)).toEqual(['crm'])
+    expect(available.map((p) => p.id)).toEqual(['crm', 'hr'])
+  })
+
+  it('every available product has an in-app path to land on', () => {
+    for (const p of PRODUCTS.filter((p) => p.status === 'available')) {
+      expect(p.path, `${p.id} is available but has no path`).toBeTruthy()
+    }
   })
 
   it('every product id is unique', () => {
