@@ -80,6 +80,9 @@ const TENANT_SCOPED_TABLES = [
   "attendance_records",
   "leave_types",
   "leave_requests",
+  "holidays",
+  "shifts",
+  "roster_assignments",
 ] as const;
 
 describe("tenant isolation — structural guarantees", () => {
@@ -178,7 +181,7 @@ describe("HR — self-vs-admin scoping (§26: employee A must not see employee B
   // NOT use the plain `is_account_member(account_id)` any-member-reads
   // policy shape — every SELECT policy must also require either
   // admin+ or a match against the caller's own linked employee row.
-  for (const table of ["attendance_records", "leave_requests"] as const) {
+  for (const table of ["attendance_records", "leave_requests", "roster_assignments"] as const) {
     it(`${table}: SELECT policy requires admin OR the caller's own employee row`, () => {
       const policy = sql.match(
         new RegExp(`CREATE POLICY \\w+ ON ${table} FOR SELECT[\\s\\S]*?;`, "i"),
