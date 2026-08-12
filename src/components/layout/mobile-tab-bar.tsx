@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
+  CalendarCheck,
+  CalendarDays,
   GitBranch,
   LayoutDashboard,
   MessageSquare,
@@ -18,11 +20,23 @@ import { useTotalUnread } from "@/hooks/use-total-unread";
 // thumb-sized targets on a 375pt screen, so the four highest-traffic
 // destinations get a tab and everything else lives behind "More", which
 // opens the same drawer the tablet shell uses.
-const TABS = [
+const CRM_TABS = [
   { href: "/dashboard", labelKey: "dashboard", icon: LayoutDashboard },
   { href: "/inbox", labelKey: "inbox", icon: MessageSquare },
   { href: "/contacts", labelKey: "contacts", icon: Users },
   { href: "/pipelines", labelKey: "pipelines", icon: GitBranch },
+] as const;
+
+// HR is a different product, not a CRM sub-section, so its bottom tabs
+// point at HR's own four highest-traffic destinations rather than
+// reusing CRM's — a "Contacts" or "Pipelines" tab would be actively
+// wrong context while inside HR. Same four-tabs-plus-More shape, no
+// new navigation pattern introduced.
+const HR_TABS = [
+  { href: "/hr", labelKey: "hrHome", icon: LayoutDashboard },
+  { href: "/hr/employees", labelKey: "hrEmployees", icon: Users },
+  { href: "/hr/attendance", labelKey: "hrAttendance", icon: CalendarCheck },
+  { href: "/hr/leave", labelKey: "hrLeave", icon: CalendarDays },
 ] as const;
 
 interface MobileTabBarProps {
@@ -35,6 +49,15 @@ export function MobileTabBar({ onOpenMore }: MobileTabBarProps) {
   const pathname = usePathname();
   const totalUnread = useTotalUnread();
 
+  // HR is a different product, not a CRM section — its own tabs, not
+  // CRM's, whenever the current route is under /hr.
+  const isHr = pathname === "/hr" || pathname.startsWith("/hr/");
+  const TABS = isHr ? HR_TABS : CRM_TABS;
+  // Both product roots ("/dashboard", "/hr") must match exactly —
+  // otherwise the root tab would light up as "active" for every
+  // sub-route too, since every other href in each list starts with it.
+  const ROOT_HREFS = ["/dashboard", "/hr"];
+
   return (
     <nav
       aria-label="Primary"
@@ -46,7 +69,7 @@ export function MobileTabBar({ onOpenMore }: MobileTabBarProps) {
       {TABS.map((tab) => {
         const isActive =
           pathname === tab.href ||
-          (tab.href !== "/dashboard" && pathname.startsWith(tab.href));
+          (!ROOT_HREFS.includes(tab.href) && pathname.startsWith(tab.href));
         const showUnread = tab.href === "/inbox" && totalUnread > 0;
 
         return (
