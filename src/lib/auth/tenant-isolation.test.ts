@@ -86,6 +86,8 @@ const TENANT_SCOPED_TABLES = [
   "job_openings",
   "candidates",
   "interviews",
+  "goals",
+  "performance_reviews",
 ] as const;
 
 describe("tenant isolation — structural guarantees", () => {
@@ -184,7 +186,13 @@ describe("HR — self-vs-admin scoping (§26: employee A must not see employee B
   // NOT use the plain `is_account_member(account_id)` any-member-reads
   // policy shape — every SELECT policy must also require either
   // admin+ or a match against the caller's own linked employee row.
-  for (const table of ["attendance_records", "leave_requests", "roster_assignments"] as const) {
+  for (const table of [
+    "attendance_records",
+    "leave_requests",
+    "roster_assignments",
+    "goals",
+    "performance_reviews",
+  ] as const) {
     it(`${table}: SELECT policy requires admin OR the caller's own employee row`, () => {
       const policy = sql.match(
         new RegExp(`CREATE POLICY \\w+ ON ${table} FOR SELECT[\\s\\S]*?;`, "i"),
@@ -214,5 +222,29 @@ describe("HR — self-vs-admin scoping (§26: employee A must not see employee B
     expect(policy, "interviews has no SELECT policy").not.toBeNull();
     expect(policy![0]).toMatch(/is_account_member\(account_id,\s*'admin'\)/);
     expect(policy![0]).toMatch(/interviewer_id\s*=\s*auth\.uid\(\)/);
+  });
+
+  it("performance_reviews has no UPDATE policy — reviews are immutable once written", () => {
+    // Rule: "Do not overwrite previous review results. Store
+    // historical reviews." A missing UPDATE policy means RLS denies
+    // every UPDATE by default (Postgres RLS is deny-by-default per
+    // command), so this is a real enforcement, not just a convention.
+    expect(sql).not.toMatch(/CREATE POLICY \w+ ON performance_reviews FOR UPDATE/i);
+  });
+
+  it("goals: a non-admin self-update is restricted to current_value/status by a trigger, not just the RLS policy", () => {
+    // WITH CHECK can express "this column equals this value" but not
+    // "no OTHER column changed" — that column-level restriction has
+    // to be a BEFORE UPDATE trigger. Confirms the trigger exists and
+    // is wired to the table, not just defined and forgotten.
+    const fn = sql.match(
+      /CREATE OR REPLACE FUNCTION goals_restrict_self_update_fields[\s\S]*?\$\$;/i,
+    );
+    expect(fn, "goals_restrict_self_update_fields is missing").not.toBeNull();
+    expect(fn![0]).toMatch(/SECURITY DEFINER/i);
+    expect(fn![0]).toMatch(/SET search_path\s*=\s*public/i);
+    expect(sql).toMatch(
+      /CREATE TRIGGER goals_restrict_self_update\s+BEFORE UPDATE ON goals/i,
+    );
   });
 });
