@@ -8,16 +8,26 @@ import { useAuth } from "@/hooks/use-auth";
 import { useTotalUnread } from "@/hooks/use-total-unread";
 import { useUnreadNotifications } from "@/hooks/use-unread-notifications";
 import {
+  ArrowLeft,
   Bell,
   Bot,
+  Briefcase,
+  CalendarCheck,
+  CalendarDays,
+  CalendarHeart,
+  CalendarRange,
+  Clock3,
   Crown,
+  FileText,
   GitBranch,
   LayoutDashboard,
   LogOut,
   MessageSquare,
   Radio,
+  BarChart3,
   Settings,
   Shield,
+  Target,
   User,
   UserCog,
   Users,
@@ -102,6 +112,24 @@ const navItems: NavItem[] = [
   { href: "/agents", labelKey: "aiAgents", icon: Bot },
 ];
 
+// HR is a different product, not a CRM section — its own full module
+// list, not CRM's, whenever the drawer opens from inside HR. Every
+// entry here is a real, working page (see AGENTS.md / session
+// history: nav must never link to an unbuilt route).
+const hrNavItems: NavItem[] = [
+  { href: "/hr", labelKey: "hrHome", icon: LayoutDashboard },
+  { href: "/hr/employees", labelKey: "hrEmployees", icon: Users },
+  { href: "/hr/attendance", labelKey: "hrAttendance", icon: CalendarCheck },
+  { href: "/hr/leave", labelKey: "hrLeave", icon: CalendarDays },
+  { href: "/hr/shifts", labelKey: "hrShifts", icon: Clock3 },
+  { href: "/hr/roster", labelKey: "hrRoster", icon: CalendarRange },
+  { href: "/hr/holidays", labelKey: "hrHolidays", icon: CalendarHeart },
+  { href: "/hr/recruitment", labelKey: "hrRecruitment", icon: Briefcase },
+  { href: "/hr/performance", labelKey: "hrPerformance", icon: Target },
+  { href: "/hr/documents", labelKey: "hrDocuments", icon: FileText },
+  { href: "/hr/reports", labelKey: "hrReports", icon: BarChart3 },
+];
+
 const bottomNavItems = [
   { href: "/settings", labelKey: "settings", icon: Settings },
 ];
@@ -121,6 +149,11 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
   const { profile, profileLoading, account, accountRole, signOut } = useAuth();
   const totalUnread = useTotalUnread();
   const unreadNotifications = useUnreadNotifications();
+  // HR is a different product, not a CRM section — its own module
+  // list whenever the drawer opens from inside HR.
+  const isHr = pathname === "/hr" || pathname.startsWith("/hr/");
+  const activeNavItems = isHr ? hrNavItems : navItems;
+  const rootHrefs = ["/dashboard", "/hr"];
   // Only surface the account-name strip when it actually carries
   // information. A solo user's personal account is named after them
   // (the 017 signup trigger seeds it from `full_name`), so showing it
@@ -212,11 +245,20 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
 
         {/* Main navigation */}
         <nav className="flex-1 overflow-y-auto px-3 py-4">
+          {isHr && (
+            <Link
+              href="/dashboard"
+              className="mb-2 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground xl:py-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              {t("backToCrm")}
+            </Link>
+          )}
           <ul className="flex flex-col gap-1">
-            {navItems.map((item) => {
+            {activeNavItems.map((item) => {
               const isActive =
                 pathname === item.href ||
-                (item.href !== "/dashboard" && pathname.startsWith(item.href));
+                (!rootHrefs.includes(item.href) && pathname.startsWith(item.href));
 
               const showUnreadDot =
                 item.href === "/inbox" && totalUnread > 0 && !isActive;
