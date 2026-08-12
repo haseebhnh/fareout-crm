@@ -88,6 +88,7 @@ const TENANT_SCOPED_TABLES = [
   "interviews",
   "goals",
   "performance_reviews",
+  "employee_documents",
 ] as const;
 
 describe("tenant isolation — structural guarantees", () => {
@@ -192,6 +193,7 @@ describe("HR — self-vs-admin scoping (§26: employee A must not see employee B
     "roster_assignments",
     "goals",
     "performance_reviews",
+    "employee_documents",
   ] as const) {
     it(`${table}: SELECT policy requires admin OR the caller's own employee row`, () => {
       const policy = sql.match(
