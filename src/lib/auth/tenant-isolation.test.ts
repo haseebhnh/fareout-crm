@@ -77,6 +77,9 @@ const TENANT_SCOPED_TABLES = [
   "departments",
   "designations",
   "employees",
+  "attendance_records",
+  "leave_types",
+  "leave_requests",
 ] as const;
 
 describe("tenant isolation — structural guarantees", () => {
@@ -165,4 +168,35 @@ describe("tenant isolation — structural guarantees", () => {
       /CREATE UNIQUE INDEX[^;]*channel_connections\s*\(\s*channel\s*,\s*external_id\s*\)/i,
     );
   });
+});
+
+describe("HR — self-vs-admin scoping (§26: employee A must not see employee B's restricted data)", () => {
+  const sql = readAllMigrations();
+
+  // Unlike employees/departments (any member reads — a roster isn't
+  // secret), attendance and leave are personal data. These tables must
+  // NOT use the plain `is_account_member(account_id)` any-member-reads
+  // policy shape — every SELECT policy must also require either
+  // admin+ or a match against the caller's own linked employee row.
+  for (const table of ["attendance_records", "leave_requests"] as const) {
+    it(`${table}: SELECT policy requires admin OR the caller's own employee row`, () => {
+      const policy = sql.match(
+        new RegExp(`CREATE POLICY \\w+ ON ${table} FOR SELECT[\\s\\S]*?;`, "i"),
+      );
+      expect(policy, `${table} has no SELECT policy`).not.toBeNull();
+      expect(policy![0]).toMatch(/is_account_member\(account_id,\s*'admin'\)/);
+      expect(policy![0]).toMatch(/e\.user_id\s*=\s*auth\.uid\(\)/);
+    });
+
+    it(`${table} has no bare any-member-reads SELECT policy`, () => {
+      // A regression here would look like copying the employees_select
+      // pattern (`USING (is_account_member(account_id))` with nothing
+      // else) onto a personal-data table — this catches exactly that.
+      const bareAnyMember = new RegExp(
+        `CREATE POLICY \\w+ ON ${table} FOR SELECT USING \\(is_account_member\\(account_id\\)\\)`,
+        "i",
+      );
+      expect(sql).not.toMatch(bareAnyMember);
+    });
+  }
 });
