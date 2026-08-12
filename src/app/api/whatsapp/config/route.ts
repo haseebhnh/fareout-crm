@@ -7,6 +7,7 @@ import {
   verifyPhoneNumber,
 } from '@/lib/whatsapp/meta-api'
 import { encrypt, decrypt } from '@/lib/whatsapp/encryption'
+import { logAuditEvent, requestMetadata } from '@/lib/audit/log'
 
 /**
  * Resolve the caller's account_id from their profile. Inlined here
@@ -463,6 +464,23 @@ export async function POST(request: Request) {
           { status: 500 }
         )
       }
+
+      const { ipAddress, userAgent } = requestMetadata(request)
+      await logAuditEvent({
+        accountId,
+        actorId: user.id,
+        action: 'whatsapp_config.updated',
+        targetType: 'whatsapp_config',
+        targetId: phone_number_id,
+        // Deliberately just the phone number, never the token/secret
+        // fields — redact() would strip them anyway, but there is no
+        // reason to pass credential-shaped data into an audit call at
+        // all.
+        before: { phone_number_id: existing?.phone_number_id ?? null },
+        after: { phone_number_id },
+        ipAddress,
+        userAgent,
+      })
     } else {
       // Insert with both columns: `account_id` is the tenancy key
       // (NOT NULL post-017, UNIQUE so duplicates trip the constraint
@@ -522,7 +540,7 @@ export async function POST(request: Request) {
  * Used by the "Reset Configuration" button to recover from a corrupted
  * encrypted token (mismatched ENCRYPTION_KEY across environments).
  */
-export async function DELETE() {
+export async function DELETE(request: Request) {
   try {
     const supabase = await createClient()
 
@@ -543,6 +561,12 @@ export async function DELETE() {
       )
     }
 
+    const { data: before } = await supabase
+      .from('whatsapp_config')
+      .select('phone_number_id')
+      .eq('account_id', accountId)
+      .maybeSingle()
+
     const { error: deleteError } = await supabase
       .from('whatsapp_config')
       .delete()
@@ -555,6 +579,18 @@ export async function DELETE() {
         { status: 500 }
       )
     }
+
+    const { ipAddress, userAgent } = requestMetadata(request)
+    await logAuditEvent({
+      accountId,
+      actorId: user.id,
+      action: 'whatsapp_config.reset',
+      targetType: 'whatsapp_config',
+      targetId: before?.phone_number_id ?? null,
+      before: before ? { phone_number_id: before.phone_number_id } : null,
+      ipAddress,
+      userAgent,
+    })
 
     return NextResponse.json({ success: true })
   } catch (error) {

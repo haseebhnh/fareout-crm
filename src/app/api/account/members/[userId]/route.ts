@@ -24,6 +24,7 @@ import {
   rateLimitResponse,
   RATE_LIMITS,
 } from "@/lib/rate-limit";
+import { logAuditEvent, requestMetadata } from "@/lib/audit/log";
 
 // Map known SQLSTATEs from the RPCs (see migration 018) onto HTTP
 // statuses. The `error.code` field is the SQLSTATE; the `message`
@@ -81,12 +82,34 @@ export async function PATCH(
       );
     }
 
+    // Read before the mutation, purely for the audit trail — the RPC
+    // is the sole source of truth for whether the change is allowed.
+    const { data: before } = await ctx.supabase
+      .from("profiles")
+      .select("account_role, full_name, email")
+      .eq("user_id", userId)
+      .maybeSingle();
+
     const { error } = await ctx.supabase.rpc("set_member_role", {
       p_user_id: userId,
       p_new_role: role,
     });
 
     if (error) return rpcErrorToResponse(error);
+
+    const { ipAddress, userAgent } = requestMetadata(request);
+    await logAuditEvent({
+      accountId: ctx.accountId,
+      actorId: ctx.userId,
+      action: "member.role_changed",
+      targetType: "member",
+      targetId: userId,
+      targetLabel: before?.full_name ?? before?.email ?? null,
+      before: before ? { role: before.account_role } : null,
+      after: { role },
+      ipAddress,
+      userAgent,
+    });
 
     return NextResponse.json({ ok: true });
   } catch (err) {
@@ -95,7 +118,7 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ userId: string }> },
 ) {
   try {
@@ -109,11 +132,30 @@ export async function DELETE(
 
     const { userId } = await params;
 
+    const { data: before } = await ctx.supabase
+      .from("profiles")
+      .select("account_role, full_name, email")
+      .eq("user_id", userId)
+      .maybeSingle();
+
     const { data, error } = await ctx.supabase.rpc("remove_account_member", {
       p_user_id: userId,
     });
 
     if (error) return rpcErrorToResponse(error);
+
+    const { ipAddress, userAgent } = requestMetadata(request);
+    await logAuditEvent({
+      accountId: ctx.accountId,
+      actorId: ctx.userId,
+      action: "member.removed",
+      targetType: "member",
+      targetId: userId,
+      targetLabel: before?.full_name ?? before?.email ?? null,
+      before: before ? { role: before.account_role } : null,
+      ipAddress,
+      userAgent,
+    });
 
     return NextResponse.json({ ok: true, newPersonalAccountId: data });
   } catch (err) {
