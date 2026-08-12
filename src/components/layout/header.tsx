@@ -18,6 +18,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ModeToggle } from "@/components/layout/mode-toggle";
 
+/**
+ * Route -> translation key for the header title.
+ *
+ * Must stay in step with `navItems` in sidebar.tsx. A route missing here
+ * does not fail loudly — it silently falls back to "dashboard", so the
+ * header read "Dashboard" while the page below it said "Flows". The
+ * guard test in header.test.ts exists to catch exactly that drift.
+ */
 const pageTitles: Record<string, string> = {
   "/dashboard": "dashboard",
   "/inbox": "inbox",
@@ -26,10 +34,12 @@ const pageTitles: Record<string, string> = {
   "/pipelines": "pipelines",
   "/broadcasts": "broadcasts",
   "/automations": "automations",
+  "/flows": "flows",
+  "/agents": "aiAgents",
   "/settings": "settings",
 };
 
-function getPageTitleKey(pathname: string): string {
+export function getPageTitleKey(pathname: string): string {
   if (pageTitles[pathname]) return pageTitles[pathname];
   const match = Object.entries(pageTitles).find(([path]) =>
     pathname.startsWith(path),
