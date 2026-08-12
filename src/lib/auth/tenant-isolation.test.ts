@@ -268,4 +268,48 @@ describe("HR — self-vs-admin scoping (§26: employee A must not see employee B
       /CREATE TRIGGER trg_notify_shift_assigned\s+AFTER INSERT OR UPDATE ON roster_assignments/i,
     );
   });
+
+  it("is_manager_of is SECURITY DEFINER with a pinned search_path", () => {
+    // Same privilege-escalation concern as is_account_member — walks
+    // the employees.manager_id chain to decide "is the caller
+    // somewhere above this employee", so a shadowed reference here
+    // would be a real escalation vector, not just a bug.
+    const fn = sql.match(/CREATE OR REPLACE FUNCTION is_manager_of[\s\S]*?\$\$;/i);
+    expect(fn, "is_manager_of is missing").not.toBeNull();
+    expect(fn![0]).toMatch(/SECURITY DEFINER/i);
+    expect(fn![0]).toMatch(/SET search_path\s*=\s*public/i);
+  });
+
+  it("manager-chain visibility is wired into every personal-data SELECT policy", () => {
+    // A table's SELECT policy is DROPped and CREATEd again in 053 —
+    // take the LAST match in file order (migrations apply in filename
+    // order, so the last redefinition is what's actually live), not
+    // the first, which would be the original pre-053 definition.
+    for (const table of [
+      "attendance_records",
+      "leave_requests",
+      "roster_assignments",
+      "goals",
+      "performance_reviews",
+      "employee_documents",
+    ] as const) {
+      const matches = [
+        ...sql.matchAll(new RegExp(`CREATE POLICY \\w+ ON ${table} FOR SELECT[\\s\\S]*?;`, "gi")),
+      ];
+      expect(matches.length, `${table} has no SELECT policy`).toBeGreaterThan(0);
+      const latest = matches[matches.length - 1]![0];
+      expect(latest, `${table} SELECT policy doesn't check is_manager_of`).toMatch(
+        /is_manager_of\(employee_id\)/,
+      );
+    }
+  });
+
+  it("a manager (not just admin) can approve leave and correct attendance for their reports", () => {
+    expect(sql).toMatch(
+      /CREATE POLICY leave_requests_update_manager ON leave_requests FOR UPDATE USING \(\s*is_manager_of\(employee_id\)\s*\)/i,
+    );
+    expect(sql).toMatch(
+      /CREATE POLICY attendance_update_manager ON attendance_records FOR UPDATE USING \(\s*is_manager_of\(employee_id\)\s*\)/i,
+    );
+  });
 });

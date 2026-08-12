@@ -76,6 +76,7 @@ interface Employee {
   phone: string | null;
   department_id: string | null;
   designation_id: string | null;
+  manager_id: string | null;
   employment_status: 'active' | 'on_leave' | 'terminated';
   hired_at: string | null;
 }
@@ -99,6 +100,7 @@ interface EmployeeFormState {
   phone: string;
   department_id: string;
   designation_id: string;
+  manager_id: string;
   employment_status: Employee['employment_status'];
 }
 
@@ -109,6 +111,7 @@ const EMPTY_FORM: EmployeeFormState = {
   phone: '',
   department_id: '',
   designation_id: '',
+  manager_id: '',
   employment_status: 'active',
 };
 
@@ -132,7 +135,7 @@ export default function HrEmployeesPage() {
       supabase
         .from('employees')
         .select(
-          'id, full_name, email, phone, department_id, designation_id, employment_status, hired_at',
+          'id, full_name, email, phone, department_id, designation_id, manager_id, employment_status, hired_at',
         )
         .order('full_name', { ascending: true }),
       supabase.from('departments').select('id, name').order('name'),
@@ -161,6 +164,8 @@ export default function HrEmployeesPage() {
     departments.find((d) => d.id === id)?.name ?? '—';
   const designationTitle = (id: string | null) =>
     designations.find((d) => d.id === id)?.title ?? '—';
+  const managerName = (id: string | null) =>
+    employees.find((e) => e.id === id)?.full_name ?? '—';
 
   const openCreate = () => {
     setForm(EMPTY_FORM);
@@ -175,6 +180,7 @@ export default function HrEmployeesPage() {
       phone: employee.phone ?? '',
       department_id: employee.department_id ?? '',
       designation_id: employee.designation_id ?? '',
+      manager_id: employee.manager_id ?? '',
       employment_status: employee.employment_status,
     });
     setDialogOpen(true);
@@ -185,6 +191,10 @@ export default function HrEmployeesPage() {
       toast.error('Name is required');
       return;
     }
+    if (form.manager_id && form.manager_id === form.id) {
+      toast.error('An employee cannot be their own manager');
+      return;
+    }
     setSaving(true);
     const payload = {
       account_id: accountId,
@@ -193,6 +203,7 @@ export default function HrEmployeesPage() {
       phone: form.phone.trim() || null,
       department_id: form.department_id || null,
       designation_id: form.designation_id || null,
+      manager_id: form.manager_id || null,
       employment_status: form.employment_status,
     };
 
@@ -259,6 +270,7 @@ export default function HrEmployeesPage() {
                 <TableHead>Name</TableHead>
                 <TableHead>Department</TableHead>
                 <TableHead>Designation</TableHead>
+                <TableHead>Manager</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Contact</TableHead>
                 {canManageMembers && <TableHead className="w-10" />}
@@ -272,6 +284,7 @@ export default function HrEmployeesPage() {
                   </TableCell>
                   <TableCell>{departmentName(employee.department_id)}</TableCell>
                   <TableCell>{designationTitle(employee.designation_id)}</TableCell>
+                  <TableCell>{managerName(employee.manager_id)}</TableCell>
                   <TableCell>
                     <span
                       className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_BADGE_CLASS[employee.employment_status]}`}
@@ -390,6 +403,34 @@ export default function HrEmployeesPage() {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Manager</Label>
+              <Select
+                value={form.manager_id || '__none__'}
+                onValueChange={(v) =>
+                  setForm((f) => ({ ...f, manager_id: v === '__none__' || !v ? '' : v }))
+                }
+                disabled={saving}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">None</SelectItem>
+                  {employees
+                    .filter((e) => e.id !== form.id)
+                    .map((e) => (
+                      <SelectItem key={e.id} value={e.id}>
+                        {e.full_name}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Determines who can see and act on this employee&rsquo;s attendance,
+                leave, goals, performance, and documents without needing admin access.
+              </p>
             </div>
             <div className="space-y-2">
               <Label>Status</Label>
