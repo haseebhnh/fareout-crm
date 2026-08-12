@@ -69,6 +69,11 @@ interface Designation {
   title: string;
 }
 
+interface Branch {
+  id: string;
+  name: string;
+}
+
 interface Employee {
   id: string;
   full_name: string;
@@ -77,6 +82,7 @@ interface Employee {
   department_id: string | null;
   designation_id: string | null;
   manager_id: string | null;
+  branch_id: string | null;
   employment_status: 'active' | 'on_leave' | 'terminated';
   hired_at: string | null;
 }
@@ -101,6 +107,7 @@ interface EmployeeFormState {
   department_id: string;
   designation_id: string;
   manager_id: string;
+  branch_id: string;
   employment_status: Employee['employment_status'];
 }
 
@@ -112,6 +119,7 @@ const EMPTY_FORM: EmployeeFormState = {
   department_id: '',
   designation_id: '',
   manager_id: '',
+  branch_id: '',
   employment_status: 'active',
 };
 
@@ -123,6 +131,7 @@ export default function HrEmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [designations, setDesignations] = useState<Designation[]>([]);
+  const [branches, setBranches] = useState<Branch[]>([]);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -131,15 +140,16 @@ export default function HrEmployeesPage() {
   const load = useCallback(async () => {
     if (!accountId) return;
     setLoading(true);
-    const [employeesRes, deptRes, desigRes] = await Promise.all([
+    const [employeesRes, deptRes, desigRes, branchRes] = await Promise.all([
       supabase
         .from('employees')
         .select(
-          'id, full_name, email, phone, department_id, designation_id, manager_id, employment_status, hired_at',
+          'id, full_name, email, phone, department_id, designation_id, manager_id, branch_id, employment_status, hired_at',
         )
         .order('full_name', { ascending: true }),
       supabase.from('departments').select('id, name').order('name'),
       supabase.from('designations').select('id, title').order('title'),
+      supabase.from('branches').select('id, name').eq('is_active', true).order('name'),
     ]);
     if (employeesRes.error) {
       toast.error('Failed to load employees');
@@ -148,6 +158,7 @@ export default function HrEmployeesPage() {
     }
     setDepartments((deptRes.data as Department[]) ?? []);
     setDesignations((desigRes.data as Designation[]) ?? []);
+    setBranches((branchRes.data as Branch[]) ?? []);
     setLoading(false);
   }, [accountId, supabase]);
 
@@ -166,6 +177,8 @@ export default function HrEmployeesPage() {
     designations.find((d) => d.id === id)?.title ?? '—';
   const managerName = (id: string | null) =>
     employees.find((e) => e.id === id)?.full_name ?? '—';
+  const branchName = (id: string | null) =>
+    branches.find((b) => b.id === id)?.name ?? '—';
 
   const openCreate = () => {
     setForm(EMPTY_FORM);
@@ -181,6 +194,7 @@ export default function HrEmployeesPage() {
       department_id: employee.department_id ?? '',
       designation_id: employee.designation_id ?? '',
       manager_id: employee.manager_id ?? '',
+      branch_id: employee.branch_id ?? '',
       employment_status: employee.employment_status,
     });
     setDialogOpen(true);
@@ -204,6 +218,7 @@ export default function HrEmployeesPage() {
       department_id: form.department_id || null,
       designation_id: form.designation_id || null,
       manager_id: form.manager_id || null,
+      branch_id: form.branch_id || null,
       employment_status: form.employment_status,
     };
 
@@ -271,6 +286,7 @@ export default function HrEmployeesPage() {
                 <TableHead>Department</TableHead>
                 <TableHead>Designation</TableHead>
                 <TableHead>Manager</TableHead>
+                <TableHead>Branch</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Contact</TableHead>
                 {canManageMembers && <TableHead className="w-10" />}
@@ -285,6 +301,7 @@ export default function HrEmployeesPage() {
                   <TableCell>{departmentName(employee.department_id)}</TableCell>
                   <TableCell>{designationTitle(employee.designation_id)}</TableCell>
                   <TableCell>{managerName(employee.manager_id)}</TableCell>
+                  <TableCell>{branchName(employee.branch_id)}</TableCell>
                   <TableCell>
                     <span
                       className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_BADGE_CLASS[employee.employment_status]}`}
@@ -431,6 +448,28 @@ export default function HrEmployeesPage() {
                 Determines who can see and act on this employee&rsquo;s attendance,
                 leave, goals, performance, and documents without needing admin access.
               </p>
+            </div>
+            <div className="space-y-2">
+              <Label>Branch</Label>
+              <Select
+                value={form.branch_id || '__none__'}
+                onValueChange={(v) =>
+                  setForm((f) => ({ ...f, branch_id: v === '__none__' || !v ? '' : v }))
+                }
+                disabled={saving}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">None</SelectItem>
+                  {branches.map((b) => (
+                    <SelectItem key={b.id} value={b.id}>
+                      {b.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label>Status</Label>

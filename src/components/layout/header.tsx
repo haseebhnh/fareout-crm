@@ -39,6 +39,7 @@ const pageTitles: Record<string, string> = {
   "/agents": "aiAgents",
   "/hr": "hrDashboard",
   "/hr/employees": "hrEmployees",
+  "/hr/branches": "hrBranches",
   "/hr/attendance": "hrAttendance",
   "/hr/leave": "hrLeave",
   "/hr/shifts": "hrShifts",

@@ -16,6 +16,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
 import {
   Users,
+  Building2,
   CalendarCheck,
   CalendarDays,
   Clock3,
@@ -30,6 +31,7 @@ import {
 
 const MODULES = [
   { href: '/hr/employees', label: 'Employees', icon: Users, desc: 'Directory & profiles' },
+  { href: '/hr/branches', label: 'Branches', icon: Building2, desc: 'Locations' },
   { href: '/hr/attendance', label: 'Attendance', icon: CalendarCheck, desc: 'Check in / out' },
   { href: '/hr/leave', label: 'Leave', icon: CalendarDays, desc: 'Requests & balances' },
   { href: '/hr/shifts', label: 'Shifts', icon: Clock3, desc: 'Shift definitions' },

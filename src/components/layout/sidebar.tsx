@@ -25,6 +25,7 @@ import {
   MessageSquare,
   Radio,
   BarChart3,
+  Building2,
   Settings,
   Shield,
   Target,
@@ -119,6 +120,7 @@ const navItems: NavItem[] = [
 const hrNavItems: NavItem[] = [
   { href: "/hr", labelKey: "hrHome", icon: LayoutDashboard },
   { href: "/hr/employees", labelKey: "hrEmployees", icon: Users },
+  { href: "/hr/branches", labelKey: "hrBranches", icon: Building2 },
   { href: "/hr/attendance", labelKey: "hrAttendance", icon: CalendarCheck },
   { href: "/hr/leave", labelKey: "hrLeave", icon: CalendarDays },
   { href: "/hr/shifts", labelKey: "hrShifts", icon: Clock3 },

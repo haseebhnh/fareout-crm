@@ -47,6 +47,7 @@ export default function HrReportsPage() {
   const [totalEmployees, setTotalEmployees] = useState(0);
   const [activeEmployees, setActiveEmployees] = useState(0);
   const [headcountByDept, setHeadcountByDept] = useState<DeptCount[]>([]);
+  const [headcountByBranch, setHeadcountByBranch] = useState<DeptCount[]>([]);
 
   const [attendanceCounts, setAttendanceCounts] = useState<Record<string, number>>({});
 
@@ -64,13 +65,15 @@ export default function HrReportsPage() {
     const [
       employeesRes,
       deptRes,
+      branchRes,
       attendanceRes,
       leaveRes,
       candidatesRes,
       docsRes,
     ] = await Promise.all([
-      supabase.from('employees').select('id, employment_status, department_id'),
+      supabase.from('employees').select('id, employment_status, department_id, branch_id'),
       supabase.from('departments').select('id, name'),
+      supabase.from('branches').select('id, name'),
       (() => {
         const { from, to } = monthRange();
         return supabase
@@ -100,6 +103,21 @@ export default function HrReportsPage() {
       Array.from(deptCounts.entries())
         .map(([id, count]) => ({
           name: departments.find((d) => d.id === id)?.name ?? 'Unassigned',
+          count,
+        }))
+        .sort((a, b) => b.count - a.count),
+    );
+
+    const branches = (branchRes.data ?? []) as { id: string; name: string }[];
+    const branchCounts = new Map<string, number>();
+    for (const e of employees) {
+      const key = e.branch_id ?? '__none__';
+      branchCounts.set(key, (branchCounts.get(key) ?? 0) + 1);
+    }
+    setHeadcountByBranch(
+      Array.from(branchCounts.entries())
+        .map(([id, count]) => ({
+          name: branches.find((b) => b.id === id)?.name ?? 'Unassigned',
           count,
         }))
         .sort((a, b) => b.count - a.count),
@@ -136,6 +154,9 @@ export default function HrReportsPage() {
     setExpiringSoonDocs(soon);
 
     setLoading(false);
+    // headcountByBranch/Dept are recomputed above rather than depended
+    // on here — including them would just re-trigger this same
+    // callback on every render since they're new arrays each time.
   }, [accountId, canManageMembers, supabase]);
 
   useEffect(() => {
@@ -228,6 +249,32 @@ export default function HrReportsPage() {
                 </div>
                 <span className="w-6 shrink-0 text-right text-sm text-muted-foreground">
                   {d.count}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="mb-8">
+        <h2 className="mb-3 text-lg font-semibold text-foreground">Headcount by branch</h2>
+        {headcountByBranch.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No employees yet.</p>
+        ) : (
+          <div className="space-y-2">
+            {headcountByBranch.map((b) => (
+              <div key={b.name} className="flex items-center gap-3">
+                <span className="w-32 shrink-0 truncate text-sm text-foreground">{b.name}</span>
+                <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
+                  <div
+                    className="h-full bg-primary"
+                    style={{
+                      width: `${totalEmployees > 0 ? (b.count / totalEmployees) * 100 : 0}%`,
+                    }}
+                  />
+                </div>
+                <span className="w-6 shrink-0 text-right text-sm text-muted-foreground">
+                  {b.count}
                 </span>
               </div>
             ))}
