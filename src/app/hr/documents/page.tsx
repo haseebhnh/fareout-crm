@@ -72,15 +72,18 @@ const TYPE_LABEL: Record<string, string> = {
   other: 'Other',
 };
 
-const REMINDER_DAYS = 30;
+const DEFAULT_REMINDER_DAYS = 30;
 
-function expiryState(expiryDate: string | null): 'expired' | 'soon' | null {
+// Configurable per account via /hr/settings (hr_settings.
+// document_expiry_reminder_days, migration 056) — falls back to the
+// same 30-day default the setting itself defaults to.
+function expiryState(expiryDate: string | null, reminderDays: number): 'expired' | 'soon' | null {
   if (!expiryDate) return null;
   const days = Math.floor(
     (new Date(expiryDate).getTime() - Date.now()) / 86_400_000,
   );
   if (days < 0) return 'expired';
-  if (days <= REMINDER_DAYS) return 'soon';
+  if (days <= reminderDays) return 'soon';
   return null;
 }
 
@@ -103,6 +106,7 @@ export default function DocumentsPage() {
   const [myEmployeeId, setMyEmployeeId] = useState<string | null>(null);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [docs, setDocs] = useState<Doc[]>([]);
+  const [reminderDays, setReminderDays] = useState(DEFAULT_REMINDER_DAYS);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -140,6 +144,13 @@ export default function DocumentsPage() {
       .order('expiry_date', { ascending: true, nullsFirst: false });
     if (error) toast.error('Failed to load documents');
     setDocs((docRows as Doc[]) ?? []);
+
+    const { data: settings } = await supabase
+      .from('hr_settings')
+      .select('document_expiry_reminder_days')
+      .eq('account_id', accountId)
+      .maybeSingle();
+    setReminderDays(settings?.document_expiry_reminder_days ?? DEFAULT_REMINDER_DAYS);
 
     setLoading(false);
   }, [accountId, user, canManageMembers, supabase]);
@@ -213,8 +224,8 @@ export default function DocumentsPage() {
   const visibleDocs = canManageMembers
     ? docs
     : docs.filter((d) => d.employee_id === myEmployeeId);
-  const expiringSoon = visibleDocs.filter((d) => expiryState(d.expiry_date) === 'soon');
-  const expired = visibleDocs.filter((d) => expiryState(d.expiry_date) === 'expired');
+  const expiringSoon = visibleDocs.filter((d) => expiryState(d.expiry_date, reminderDays) === 'soon');
+  const expired = visibleDocs.filter((d) => expiryState(d.expiry_date, reminderDays) === 'expired');
 
   if (loading || profileLoading) {
     return (
@@ -246,7 +257,7 @@ export default function DocumentsPage() {
           <p className="text-amber-700 dark:text-amber-400">
             {expired.length > 0 && `${expired.length} document${expired.length === 1 ? '' : 's'} expired. `}
             {expiringSoon.length > 0 &&
-              `${expiringSoon.length} expiring within ${REMINDER_DAYS} days.`}
+              `${expiringSoon.length} expiring within ${reminderDays} days.`}
           </p>
         </div>
       )}
@@ -270,7 +281,7 @@ export default function DocumentsPage() {
             </TableHeader>
             <TableBody>
               {visibleDocs.map((d) => {
-                const state = expiryState(d.expiry_date);
+                const state = expiryState(d.expiry_date, reminderDays);
                 const employeeName = employees.find((e) => e.id === d.employee_id)?.full_name;
                 return (
                   <TableRow key={d.id}>

@@ -26,6 +26,7 @@ import {
   Target,
   FileText,
   BarChart3,
+  Settings as SettingsIcon,
   Loader2,
 } from 'lucide-react';
 
@@ -41,6 +42,7 @@ const MODULES = [
   { href: '/hr/performance', label: 'Performance', icon: Target, desc: 'Goals & reviews' },
   { href: '/hr/documents', label: 'Documents', icon: FileText, desc: 'Files & expiry' },
   { href: '/hr/reports', label: 'Reports', icon: BarChart3, desc: 'Headcount & trends' },
+  { href: '/hr/settings', label: 'Settings', icon: SettingsIcon, desc: 'Leave types & config' },
 ] as const;
 
 function todayIso(): string {

@@ -49,6 +49,7 @@ const pageTitles: Record<string, string> = {
   "/hr/performance": "hrPerformance",
   "/hr/documents": "hrDocuments",
   "/hr/reports": "hrReports",
+  "/hr/settings": "hrSettingsPage",
   "/settings": "settings",
 };
 

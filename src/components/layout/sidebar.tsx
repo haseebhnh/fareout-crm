@@ -130,6 +130,7 @@ const hrNavItems: NavItem[] = [
   { href: "/hr/performance", labelKey: "hrPerformance", icon: Target },
   { href: "/hr/documents", labelKey: "hrDocuments", icon: FileText },
   { href: "/hr/reports", labelKey: "hrReports", icon: BarChart3 },
+  { href: "/hr/settings", labelKey: "hrSettings", icon: Settings },
 ];
 
 const bottomNavItems = [

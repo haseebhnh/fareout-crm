@@ -91,6 +91,7 @@ const TENANT_SCOPED_TABLES = [
   "employee_documents",
   "branches",
   "candidate_applications",
+  "hr_settings",
 ] as const;
 
 describe("tenant isolation — structural guarantees", () => {
@@ -338,6 +339,20 @@ describe("HR — self-vs-admin scoping (§26: employee A must not see employee B
     // opening must update, not fork, a second application row.
     expect(sql).toMatch(
       /CREATE TABLE IF NOT EXISTS candidate_applications[\s\S]*?UNIQUE\s*\(\s*candidate_id\s*,\s*job_opening_id\s*\)/i,
+    );
+  });
+
+  it("leave_types.requires_approval is actually consumed by a trigger, not just stored", () => {
+    // Existed since 046 with no consumer — Settings now exposes it as
+    // an editable toggle, which would be a fake setting without this.
+    const fn = sql.match(
+      /CREATE OR REPLACE FUNCTION auto_approve_leave_if_not_required[\s\S]*?\$\$;/i,
+    );
+    expect(fn, "auto_approve_leave_if_not_required is missing").not.toBeNull();
+    expect(fn![0]).toMatch(/SECURITY DEFINER/i);
+    expect(fn![0]).toMatch(/SET search_path\s*=\s*public/i);
+    expect(sql).toMatch(
+      /CREATE TRIGGER trg_auto_approve_leave\s+AFTER INSERT ON leave_requests/i,
     );
   });
 });
