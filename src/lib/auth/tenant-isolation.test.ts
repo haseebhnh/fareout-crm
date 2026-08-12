@@ -83,6 +83,9 @@ const TENANT_SCOPED_TABLES = [
   "holidays",
   "shifts",
   "roster_assignments",
+  "job_openings",
+  "candidates",
+  "interviews",
 ] as const;
 
 describe("tenant isolation — structural guarantees", () => {
@@ -202,4 +205,14 @@ describe("HR — self-vs-admin scoping (§26: employee A must not see employee B
       expect(sql).not.toMatch(bareAnyMember);
     });
   }
+
+  it("interviews: SELECT policy requires admin OR the assigned interviewer", () => {
+    // Rule: "interviewers must only see permitted candidate
+    // information" — an interviewer's own assignment, not every
+    // interview in the account.
+    const policy = sql.match(/CREATE POLICY \w+ ON interviews FOR SELECT[\s\S]*?;/i);
+    expect(policy, "interviews has no SELECT policy").not.toBeNull();
+    expect(policy![0]).toMatch(/is_account_member\(account_id,\s*'admin'\)/);
+    expect(policy![0]).toMatch(/interviewer_id\s*=\s*auth\.uid\(\)/);
+  });
 });
