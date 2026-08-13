@@ -8,6 +8,7 @@ import {
   CalendarDays,
   GitBranch,
   LayoutDashboard,
+  ListChecks,
   MessageSquare,
   MoreHorizontal,
   Target,
@@ -49,6 +50,13 @@ const STAFF_TABS = [
   { href: "/staff/targets", labelKey: "staffTargets", icon: Target },
 ] as const;
 
+// Tasks is a single-page product today — one tab plus "More" is
+// honest about its current size rather than padding out three tabs
+// that don't lead anywhere yet.
+const TASK_TABS = [
+  { href: "/tasks", labelKey: "tasksHome", icon: ListChecks },
+] as const;
+
 interface MobileTabBarProps {
   /** Opens the nav drawer — the "More" tab's action. */
   onOpenMore: () => void;
@@ -63,12 +71,13 @@ export function MobileTabBar({ onOpenMore }: MobileTabBarProps) {
   // CRM's, whenever the current route is under /hr.
   const isHr = pathname === "/hr" || pathname.startsWith("/hr/");
   const isStaff = pathname === "/staff" || pathname.startsWith("/staff/");
-  const TABS = isHr ? HR_TABS : isStaff ? STAFF_TABS : CRM_TABS;
-  // Every product root ("/dashboard", "/hr", "/staff") must match
-  // exactly — otherwise the root tab would light up as "active" for
-  // every sub-route too, since every other href in each list starts
-  // with it.
-  const ROOT_HREFS = ["/dashboard", "/hr", "/staff"];
+  const isTasks = pathname === "/tasks" || pathname.startsWith("/tasks/");
+  const TABS = isHr ? HR_TABS : isStaff ? STAFF_TABS : isTasks ? TASK_TABS : CRM_TABS;
+  // Every product root ("/dashboard", "/hr", "/staff", "/tasks") must
+  // match exactly — otherwise the root tab would light up as "active"
+  // for every sub-route too, since every other href in each list
+  // starts with it.
+  const ROOT_HREFS = ["/dashboard", "/hr", "/staff", "/tasks"];
 
   return (
     <nav

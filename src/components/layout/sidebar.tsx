@@ -21,6 +21,7 @@ import {
   FileText,
   GitBranch,
   LayoutDashboard,
+  ListChecks,
   LogOut,
   MessageSquare,
   Radio,
@@ -145,9 +146,17 @@ const staffNavItems: NavItem[] = [
   { href: "/staff/roster", labelKey: "staffRoster", icon: CalendarRange },
   { href: "/staff/targets", labelKey: "staffTargets", icon: TrendingUp },
   { href: "/staff/performance", labelKey: "staffPerformance", icon: Target },
+  { href: "/staff/tasks", labelKey: "staffTasks", icon: ListChecks },
   { href: "/staff/deals", labelKey: "staffDeals", icon: GitBranch },
   { href: "/staff/customers", labelKey: "staffCustomers", icon: Users },
   { href: "/staff/profile", labelKey: "staffProfile", icon: UserCircle },
+];
+
+// Tasks is its own product (task.ootrix.com), not a CRM section — the
+// account-wide task list. Small today (one destination); grows the
+// way HR did, one real page at a time.
+const tasksNavItems: NavItem[] = [
+  { href: "/tasks", labelKey: "tasksHome", icon: ListChecks },
 ];
 
 const bottomNavItems = [
@@ -173,8 +182,9 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
   // list whenever the drawer opens from inside HR.
   const isHr = pathname === "/hr" || pathname.startsWith("/hr/");
   const isStaff = pathname === "/staff" || pathname.startsWith("/staff/");
-  const activeNavItems = isHr ? hrNavItems : isStaff ? staffNavItems : navItems;
-  const rootHrefs = ["/dashboard", "/hr", "/staff"];
+  const isTasks = pathname === "/tasks" || pathname.startsWith("/tasks/");
+  const activeNavItems = isHr ? hrNavItems : isStaff ? staffNavItems : isTasks ? tasksNavItems : navItems;
+  const rootHrefs = ["/dashboard", "/hr", "/staff", "/tasks"];
   // Only surface the account-name strip when it actually carries
   // information. A solo user's personal account is named after them
   // (the 017 signup trigger seeds it from `full_name`), so showing it
@@ -266,7 +276,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
 
         {/* Main navigation */}
         <nav className="flex-1 overflow-y-auto px-3 py-4">
-          {(isHr || isStaff) && (
+          {(isHr || isStaff || isTasks) && (
             <Link
               href="/dashboard"
               className="mb-2 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground xl:py-2"

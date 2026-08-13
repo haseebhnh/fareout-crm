@@ -58,7 +58,9 @@ const pageTitles: Record<string, string> = {
   "/staff/performance": "staffPerformance",
   "/staff/deals": "staffDeals",
   "/staff/customers": "staffCustomers",
+  "/staff/tasks": "staffTasks",
   "/staff/profile": "staffProfile",
+  "/tasks": "tasksHome",
   "/settings": "settings",
 };
 

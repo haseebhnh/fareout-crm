@@ -52,7 +52,7 @@ export const PRODUCTS: readonly ProductDefinition[] = [
   { id: 'crm', subdomain: 'crm.ootrix.com', label: 'CRM', status: 'available', path: '/dashboard' },
   { id: 'hr', subdomain: 'hr.ootrix.com', label: 'HR', status: 'available', path: '/hr' },
   { id: 'staff', subdomain: 'staff.ootrix.com', label: 'Staff', status: 'available', path: '/staff' },
-  { id: 'task', subdomain: 'task.ootrix.com', label: 'Tasks', status: 'planned' },
+  { id: 'task', subdomain: 'task.ootrix.com', label: 'Tasks', status: 'available', path: '/tasks' },
   { id: 'sales', subdomain: 'sales.ootrix.com', label: 'Sales', status: 'planned' },
   { id: 'marketing', subdomain: 'marketing.ootrix.com', label: 'Marketing', status: 'planned' },
   { id: 'support', subdomain: 'support.ootrix.com', label: 'Support', status: 'planned' },

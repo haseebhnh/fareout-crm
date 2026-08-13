@@ -18,6 +18,7 @@ import {
   CalendarDays,
   CalendarRange,
   GitBranch,
+  ListChecks,
   Loader2,
   Target,
   TrendingUp,
@@ -48,6 +49,7 @@ export default function StaffDashboardPage() {
   const [openGoals, setOpenGoals] = useState(0);
   const [myDeals, setMyDeals] = useState(0);
   const [myCustomers, setMyCustomers] = useState(0);
+  const [openTasks, setOpenTasks] = useState(0);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -96,6 +98,13 @@ export default function StaffDashboardPage() {
         .select('contact_id')
         .eq('assigned_to', profile.id);
       setMyCustomers(new Set((dealContacts ?? []).map((d) => d.contact_id)).size);
+
+      const { count: taskCount } = await supabase
+        .from('tasks')
+        .select('id', { count: 'exact', head: true })
+        .eq('assigned_to', profile.id)
+        .in('status', ['open', 'in_progress']);
+      setOpenTasks(taskCount ?? 0);
     }
 
     setLoading(false);
@@ -142,6 +151,13 @@ export default function StaffDashboardPage() {
       icon: Target,
       value: String(openGoals),
       sub: 'In progress',
+    },
+    {
+      href: '/staff/tasks',
+      label: 'Tasks',
+      icon: ListChecks,
+      value: String(openTasks),
+      sub: 'Open, assigned to you',
     },
     {
       href: '/staff/deals',

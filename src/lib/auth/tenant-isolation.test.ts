@@ -93,6 +93,7 @@ const TENANT_SCOPED_TABLES = [
   "candidate_applications",
   "hr_settings",
   "employee_onboarding_items",
+  "tasks",
 ] as const;
 
 describe("tenant isolation — structural guarantees", () => {
