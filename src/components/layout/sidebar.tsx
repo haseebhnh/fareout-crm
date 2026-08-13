@@ -159,6 +159,13 @@ const tasksNavItems: NavItem[] = [
   { href: "/tasks", labelKey: "tasksHome", icon: ListChecks },
 ];
 
+// Sales is its own product (sales.ootrix.com) — a performance/reporting
+// layer over the same deals the CRM's Pipelines page manages, not a
+// second pipeline. One page today, same growth pattern as Tasks.
+const salesNavItems: NavItem[] = [
+  { href: "/sales", labelKey: "salesHome", icon: TrendingUp },
+];
+
 const bottomNavItems = [
   { href: "/settings", labelKey: "settings", icon: Settings },
 ];
@@ -183,8 +190,17 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
   const isHr = pathname === "/hr" || pathname.startsWith("/hr/");
   const isStaff = pathname === "/staff" || pathname.startsWith("/staff/");
   const isTasks = pathname === "/tasks" || pathname.startsWith("/tasks/");
-  const activeNavItems = isHr ? hrNavItems : isStaff ? staffNavItems : isTasks ? tasksNavItems : navItems;
-  const rootHrefs = ["/dashboard", "/hr", "/staff", "/tasks"];
+  const isSales = pathname === "/sales" || pathname.startsWith("/sales/");
+  const activeNavItems = isHr
+    ? hrNavItems
+    : isStaff
+      ? staffNavItems
+      : isTasks
+        ? tasksNavItems
+        : isSales
+          ? salesNavItems
+          : navItems;
+  const rootHrefs = ["/dashboard", "/hr", "/staff", "/tasks", "/sales"];
   // Only surface the account-name strip when it actually carries
   // information. A solo user's personal account is named after them
   // (the 017 signup trigger seeds it from `full_name`), so showing it
@@ -276,7 +292,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
 
         {/* Main navigation */}
         <nav className="flex-1 overflow-y-auto px-3 py-4">
-          {(isHr || isStaff || isTasks) && (
+          {(isHr || isStaff || isTasks || isSales) && (
             <Link
               href="/dashboard"
               className="mb-2 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground xl:py-2"

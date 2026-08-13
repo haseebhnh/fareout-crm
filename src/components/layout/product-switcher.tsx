@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { LayoutGrid, Lock } from "lucide-react";
+import { Grid3x3, LayoutGrid, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 
@@ -11,6 +11,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
@@ -45,6 +46,14 @@ export function ProductSwitcher() {
         sideOffset={6}
         className="min-w-56 bg-popover text-popover-foreground ring-border"
       >
+        <DropdownMenuItem
+          render={<Link href="/apps" />}
+          className="font-medium text-popover-foreground focus:bg-accent focus:text-accent-foreground"
+        >
+          <Grid3x3 className="mr-2 size-4" />
+          {t("viewAllApps")}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
         {PRODUCTS.map((product) => {
           const unlocked = product.status === "available" && enabled.has(product.id);
           if (unlocked) {

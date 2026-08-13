@@ -29,6 +29,7 @@ import { ProductSwitcher } from "@/components/layout/product-switcher";
  */
 const pageTitles: Record<string, string> = {
   "/dashboard": "dashboard",
+  "/apps": "apps",
   "/inbox": "inbox",
   "/notifications": "notifications",
   "/contacts": "contacts",
@@ -61,6 +62,7 @@ const pageTitles: Record<string, string> = {
   "/staff/tasks": "staffTasks",
   "/staff/profile": "staffProfile",
   "/tasks": "tasksHome",
+  "/sales": "salesHome",
   "/settings": "settings",
 };
 

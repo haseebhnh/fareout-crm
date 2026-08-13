@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { PRODUCTS, getProduct, productForHost, isProductId } from './registry'
 
 describe('PRODUCTS', () => {
-  it('has exactly the available products with a real, complete implementation: crm, hr, staff, task', () => {
+  it('has exactly the available products with a real, complete implementation: crm, hr, staff, task, sales', () => {
     const available = PRODUCTS.filter((p) => p.status === 'available')
-    expect(available.map((p) => p.id)).toEqual(['crm', 'hr', 'staff', 'task'])
+    expect(available.map((p) => p.id)).toEqual(['crm', 'hr', 'staff', 'task', 'sales'])
   })
 
   it('every available product has an in-app path to land on', () => {

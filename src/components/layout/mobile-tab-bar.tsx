@@ -12,6 +12,7 @@ import {
   MessageSquare,
   MoreHorizontal,
   Target,
+  TrendingUp,
   Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -57,6 +58,11 @@ const TASK_TABS = [
   { href: "/tasks", labelKey: "tasksHome", icon: ListChecks },
 ] as const;
 
+// Sales is also single-page today.
+const SALES_TABS = [
+  { href: "/sales", labelKey: "salesHome", icon: TrendingUp },
+] as const;
+
 interface MobileTabBarProps {
   /** Opens the nav drawer — the "More" tab's action. */
   onOpenMore: () => void;
@@ -72,12 +78,21 @@ export function MobileTabBar({ onOpenMore }: MobileTabBarProps) {
   const isHr = pathname === "/hr" || pathname.startsWith("/hr/");
   const isStaff = pathname === "/staff" || pathname.startsWith("/staff/");
   const isTasks = pathname === "/tasks" || pathname.startsWith("/tasks/");
-  const TABS = isHr ? HR_TABS : isStaff ? STAFF_TABS : isTasks ? TASK_TABS : CRM_TABS;
-  // Every product root ("/dashboard", "/hr", "/staff", "/tasks") must
-  // match exactly — otherwise the root tab would light up as "active"
-  // for every sub-route too, since every other href in each list
-  // starts with it.
-  const ROOT_HREFS = ["/dashboard", "/hr", "/staff", "/tasks"];
+  const isSales = pathname === "/sales" || pathname.startsWith("/sales/");
+  const TABS = isHr
+    ? HR_TABS
+    : isStaff
+      ? STAFF_TABS
+      : isTasks
+        ? TASK_TABS
+        : isSales
+          ? SALES_TABS
+          : CRM_TABS;
+  // Every product root ("/dashboard", "/hr", "/staff", "/tasks",
+  // "/sales") must match exactly — otherwise the root tab would light
+  // up as "active" for every sub-route too, since every other href in
+  // each list starts with it.
+  const ROOT_HREFS = ["/dashboard", "/hr", "/staff", "/tasks", "/sales"];
 
   return (
     <nav
