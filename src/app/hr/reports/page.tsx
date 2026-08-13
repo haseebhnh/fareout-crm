@@ -4,7 +4,7 @@
 // HR — Reports.
 //
 // Admin-only (data here aggregates across every employee — headcount,
-// attendance, leave, recruitment, document expiry — so it's gated the
+// attendance, leave, recruitment, onboarding, document expiry — so it's gated the
 // same as every other cross-employee view in HR). Every number is a
 // real query against the tables built this session, computed at
 // render time — no stored/cached statistics, no mock data. A shared,
@@ -22,6 +22,7 @@ import {
   CalendarDays,
   Briefcase,
   FileWarning,
+  ListChecks,
   Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -58,6 +59,9 @@ export default function HrReportsPage() {
   const [expiredDocs, setExpiredDocs] = useState(0);
   const [expiringSoonDocs, setExpiringSoonDocs] = useState(0);
 
+  const [onboardingDone, setOnboardingDone] = useState(0);
+  const [onboardingTotal, setOnboardingTotal] = useState(0);
+
   const load = useCallback(async () => {
     if (!accountId || !canManageMembers) return;
     setLoading(true);
@@ -70,6 +74,7 @@ export default function HrReportsPage() {
       leaveRes,
       candidatesRes,
       docsRes,
+      onboardingRes,
     ] = await Promise.all([
       supabase.from('employees').select('id, employment_status, department_id, branch_id'),
       supabase.from('departments').select('id, name'),
@@ -85,6 +90,7 @@ export default function HrReportsPage() {
       supabase.from('leave_requests').select('status'),
       supabase.from('candidates').select('stage'),
       supabase.from('employee_documents').select('expiry_date').not('expiry_date', 'is', null),
+      supabase.from('employee_onboarding_items').select('is_done'),
     ]);
 
     if (employeesRes.error) toast.error('Failed to load report data');
@@ -153,6 +159,10 @@ export default function HrReportsPage() {
     setExpiredDocs(expired);
     setExpiringSoonDocs(soon);
 
+    const onboardingRows = onboardingRes.data ?? [];
+    setOnboardingTotal(onboardingRows.length);
+    setOnboardingDone(onboardingRows.filter((r) => r.is_done).length);
+
     setLoading(false);
     // headcountByBranch/Dept are recomputed above rather than depended
     // on here — including them would just re-trigger this same
@@ -204,7 +214,7 @@ export default function HrReportsPage() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold tracking-tight text-foreground">Reports</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Headcount, attendance, leave, recruitment, and document expiry — computed live.
+          Headcount, attendance, leave, recruitment, onboarding, and document expiry — computed live.
         </p>
       </div>
 
@@ -227,6 +237,14 @@ export default function HrReportsPage() {
           'Documents needing attention',
           expiredDocs + expiringSoonDocs,
           `${expiredDocs} expired, ${expiringSoonDocs} expiring soon`,
+        )}
+        {statCard(
+          <ListChecks className="size-4" />,
+          'Onboarding items completed',
+          onboardingTotal > 0 ? `${onboardingDone}/${onboardingTotal}` : '0/0',
+          onboardingTotal > 0
+            ? `${Math.round((onboardingDone / onboardingTotal) * 100)}% complete across all new hires`
+            : 'No onboarding items yet',
         )}
       </div>
 
