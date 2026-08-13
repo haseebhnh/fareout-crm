@@ -1,4 +1,8 @@
+"use client";
+
 import Link from "next/link";
+import { motion, useMotionValueEvent, useScroll } from "motion/react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowRight,
   BarChart3,
@@ -129,9 +133,19 @@ export default function MarketingPage() {
 }
 
 function SiteNav() {
+  const { scrollY } = useScroll();
+  const [scrolled, setScrolled] = useState(false);
+  useMotionValueEvent(scrollY, "change", (y) => setScrolled(y > 8));
+
   return (
-    <header
+    <motion.header
       className="sticky top-0 z-50 border-b backdrop-blur-xl"
+      animate={{
+        boxShadow: scrolled
+          ? "0 8px 30px -18px color-mix(in oklab, var(--oo-ink) 45%, transparent)"
+          : "0 0px 0px 0px transparent",
+      }}
+      transition={{ duration: 0.25 }}
       style={{
         borderColor: "var(--oo-border)",
         background: "color-mix(in oklab, var(--oo-surface) 82%, transparent)",
@@ -174,7 +188,7 @@ function SiteNav() {
           </Link>
         </div>
       </nav>
-    </header>
+    </motion.header>
   );
 }
 
@@ -191,6 +205,20 @@ function Hero() {
           background:
             "radial-gradient(60rem 32rem at 12% -10%, color-mix(in oklab, var(--oo-secondary) 16%, transparent), transparent 62%), radial-gradient(46rem 28rem at 92% 4%, color-mix(in oklab, var(--oo-primary) 12%, transparent), transparent 60%)",
         }}
+      />
+      <motion.div
+        aria-hidden
+        className="pointer-events-none absolute -left-24 top-10 -z-10 size-[26rem] rounded-full blur-3xl"
+        style={{ background: "color-mix(in oklab, var(--oo-secondary) 18%, transparent)" }}
+        animate={{ x: [0, 24, 0], y: [0, -16, 0] }}
+        transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <motion.div
+        aria-hidden
+        className="pointer-events-none absolute -right-16 top-24 -z-10 size-[22rem] rounded-full blur-3xl"
+        style={{ background: "color-mix(in oklab, var(--oo-primary) 14%, transparent)" }}
+        animate={{ x: [0, -20, 0], y: [0, 22, 0] }}
+        transition={{ duration: 16, repeat: Infinity, ease: "easeInOut" }}
       />
 
       <div className="mx-auto max-w-6xl px-5 pb-20 pt-16 sm:px-8 sm:pb-28 sm:pt-24">
@@ -339,11 +367,11 @@ function HeroVisual() {
 
 function TrustBar() {
   const stats = [
-    { value: "180+", label: "Companies registered" },
-    { value: "15", label: "Products in one platform" },
-    { value: "9", label: "Industries served" },
-    { value: "24/7", label: "Support" },
-  ];
+    { value: 180, suffix: "+", label: "Companies registered" },
+    { value: 15, suffix: "", label: "Products in one platform" },
+    { value: 9, suffix: "", label: "Industries served" },
+    { value: null, display: "24/7", label: "Support" },
+  ] as const;
 
   return (
     <section
@@ -367,7 +395,11 @@ function TrustBar() {
                   className="text-3xl font-bold tracking-tight sm:text-4xl"
                   style={{ color: "var(--oo-primary)" }}
                 >
-                  {stat.value}
+                  {stat.value !== null ? (
+                    <Counter to={stat.value} suffix={stat.suffix} />
+                  ) : (
+                    stat.display
+                  )}
                 </p>
                 <p
                   className="mt-1.5 text-sm"
@@ -381,6 +413,55 @@ function TrustBar() {
         </div>
       </div>
     </section>
+  );
+}
+
+/**
+ * Counts up from 0 to `to` once scrolled into view. Falls visible the
+ * same way `Reveal` does: the final number is always what's in the DOM
+ * on first paint via SSR (`to`), and the animation only overwrites it
+ * client-side after mount — a failed/slow animation never leaves a
+ * stat reading "0".
+ */
+function Counter({ to, suffix = "" }: { to: number; suffix?: string }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const [display, setDisplay] = useState(to);
+  const inViewRef = useRef(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting && !inViewRef.current) {
+            inViewRef.current = true;
+            const start = performance.now();
+            const duration = 1100;
+            const step = (now: number) => {
+              const progress = Math.min((now - start) / duration, 1);
+              const eased = 1 - Math.pow(1 - progress, 3);
+              setDisplay(Math.round(to * eased));
+              if (progress < 1) requestAnimationFrame(step);
+            };
+            setDisplay(0);
+            requestAnimationFrame(step);
+            observer.disconnect();
+          }
+        }
+      },
+      { threshold: 0.4 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [to]);
+
+  return (
+    <span ref={ref}>
+      {display}
+      {suffix}
+    </span>
   );
 }
 
@@ -429,22 +510,26 @@ function Products() {
         <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {PRODUCTS.map((product, i) => (
             <Reveal key={product.name} delay={(i % 3) * 80}>
-              <div
-                className="group h-full rounded-2xl border p-6 transition-shadow hover:shadow-lg"
+              <motion.div
+                className="group h-full rounded-2xl border p-6"
                 style={{
                   borderColor: "var(--oo-border)",
                   background: "var(--oo-surface)",
                 }}
+                whileHover={{ y: -4, boxShadow: "0 20px 40px -24px color-mix(in oklab, var(--oo-ink) 30%, transparent)" }}
+                transition={{ type: "spring", stiffness: 300, damping: 22 }}
               >
-                <div
-                  className="flex size-11 items-center justify-center rounded-xl transition-transform group-hover:scale-105"
+                <motion.div
+                  className="flex size-11 items-center justify-center rounded-xl"
                   style={{
                     background: "color-mix(in oklab, var(--oo-secondary) 12%, transparent)",
                     color: "var(--oo-primary)",
                   }}
+                  whileHover={{ scale: 1.08 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 18 }}
                 >
                   <product.icon className="size-5" />
-                </div>
+                </motion.div>
                 <h3 className="mt-4 text-base font-semibold tracking-tight">
                   {product.name}
                 </h3>
@@ -454,7 +539,7 @@ function Products() {
                 >
                   {product.blurb}
                 </p>
-              </div>
+              </motion.div>
             </Reveal>
           ))}
         </div>
@@ -540,7 +625,7 @@ function Pricing() {
         <div className="mt-14 grid gap-6 lg:grid-cols-3">
           {PLANS.map((plan, i) => (
             <Reveal key={plan.id} delay={i * 110}>
-              <div
+              <motion.div
                 className="relative flex h-full flex-col rounded-3xl border p-7"
                 style={{
                   borderColor: plan.featured
@@ -551,6 +636,8 @@ function Pricing() {
                     ? "0 24px 60px -28px color-mix(in oklab, var(--oo-primary) 55%, transparent)"
                     : undefined,
                 }}
+                whileHover={{ y: -6 }}
+                transition={{ type: "spring", stiffness: 280, damping: 22 }}
               >
                 {plan.featured && (
                   <span
@@ -612,7 +699,7 @@ function Pricing() {
                 >
                   {plan.cta}
                 </Link>
-              </div>
+              </motion.div>
             </Reveal>
           ))}
         </div>
