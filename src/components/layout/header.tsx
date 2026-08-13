@@ -50,6 +50,16 @@ const pageTitles: Record<string, string> = {
   "/hr/documents": "hrDocuments",
   "/hr/reports": "hrReports",
   "/hr/settings": "hrSettingsPage",
+  "/staff": "staffHome",
+  "/staff/attendance": "staffAttendance",
+  "/staff/leave": "staffLeave",
+  "/staff/roster": "staffRoster",
+  "/staff/targets": "staffTargets",
+  "/staff/performance": "staffPerformance",
+  "/staff/deals": "staffDeals",
+  "/staff/customers": "staffCustomers",
+  "/staff/whatsapp": "staffWhatsapp",
+  "/staff/profile": "staffProfile",
   "/settings": "settings",
 };
 

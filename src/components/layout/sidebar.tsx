@@ -22,6 +22,7 @@ import {
   GitBranch,
   LayoutDashboard,
   LogOut,
+  MessageCircle,
   MessageSquare,
   Radio,
   BarChart3,
@@ -29,7 +30,9 @@ import {
   Settings,
   Shield,
   Target,
+  TrendingUp,
   User,
+  UserCircle,
   UserCog,
   Users,
   UsersRound,
@@ -132,6 +135,23 @@ const hrNavItems: NavItem[] = [
   { href: "/hr/reports", labelKey: "hrReports", icon: BarChart3 },
 ];
 
+// Staff is a personal portal, not the HR admin console — its own nav
+// of "My X" destinations, every one a real page reading the caller's
+// own data (see AGENTS.md / session history: nav must never link to
+// an unbuilt route).
+const staffNavItems: NavItem[] = [
+  { href: "/staff", labelKey: "staffHome", icon: LayoutDashboard },
+  { href: "/staff/attendance", labelKey: "staffAttendance", icon: CalendarCheck },
+  { href: "/staff/leave", labelKey: "staffLeave", icon: CalendarDays },
+  { href: "/staff/roster", labelKey: "staffRoster", icon: CalendarRange },
+  { href: "/staff/targets", labelKey: "staffTargets", icon: TrendingUp },
+  { href: "/staff/performance", labelKey: "staffPerformance", icon: Target },
+  { href: "/staff/deals", labelKey: "staffDeals", icon: GitBranch },
+  { href: "/staff/customers", labelKey: "staffCustomers", icon: Users },
+  { href: "/staff/whatsapp", labelKey: "staffWhatsapp", icon: MessageCircle },
+  { href: "/staff/profile", labelKey: "staffProfile", icon: UserCircle },
+];
+
 const bottomNavItems = [
   { href: "/settings", labelKey: "settings", icon: Settings },
 ];
@@ -154,8 +174,9 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
   // HR is a different product, not a CRM section — its own module
   // list whenever the drawer opens from inside HR.
   const isHr = pathname === "/hr" || pathname.startsWith("/hr/");
-  const activeNavItems = isHr ? hrNavItems : navItems;
-  const rootHrefs = ["/dashboard", "/hr"];
+  const isStaff = pathname === "/staff" || pathname.startsWith("/staff/");
+  const activeNavItems = isHr ? hrNavItems : isStaff ? staffNavItems : navItems;
+  const rootHrefs = ["/dashboard", "/hr", "/staff"];
   // Only surface the account-name strip when it actually carries
   // information. A solo user's personal account is named after them
   // (the 017 signup trigger seeds it from `full_name`), so showing it
@@ -247,7 +268,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
 
         {/* Main navigation */}
         <nav className="flex-1 overflow-y-auto px-3 py-4">
-          {isHr && (
+          {(isHr || isStaff) && (
             <Link
               href="/dashboard"
               className="mb-2 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground xl:py-2"

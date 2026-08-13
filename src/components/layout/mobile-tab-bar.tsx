@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   MessageSquare,
   MoreHorizontal,
+  Target,
   Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -39,6 +40,15 @@ const HR_TABS = [
   { href: "/hr/leave", labelKey: "hrLeave", icon: CalendarDays },
 ] as const;
 
+// Staff's own four highest-traffic destinations — a personal portal,
+// not a CRM or HR sub-section, so it gets its own tab set too.
+const STAFF_TABS = [
+  { href: "/staff", labelKey: "staffHome", icon: LayoutDashboard },
+  { href: "/staff/attendance", labelKey: "staffAttendance", icon: CalendarCheck },
+  { href: "/staff/leave", labelKey: "staffLeave", icon: CalendarDays },
+  { href: "/staff/targets", labelKey: "staffTargets", icon: Target },
+] as const;
+
 interface MobileTabBarProps {
   /** Opens the nav drawer — the "More" tab's action. */
   onOpenMore: () => void;
@@ -52,11 +62,13 @@ export function MobileTabBar({ onOpenMore }: MobileTabBarProps) {
   // HR is a different product, not a CRM section — its own tabs, not
   // CRM's, whenever the current route is under /hr.
   const isHr = pathname === "/hr" || pathname.startsWith("/hr/");
-  const TABS = isHr ? HR_TABS : CRM_TABS;
-  // Both product roots ("/dashboard", "/hr") must match exactly —
-  // otherwise the root tab would light up as "active" for every
-  // sub-route too, since every other href in each list starts with it.
-  const ROOT_HREFS = ["/dashboard", "/hr"];
+  const isStaff = pathname === "/staff" || pathname.startsWith("/staff/");
+  const TABS = isHr ? HR_TABS : isStaff ? STAFF_TABS : CRM_TABS;
+  // Every product root ("/dashboard", "/hr", "/staff") must match
+  // exactly — otherwise the root tab would light up as "active" for
+  // every sub-route too, since every other href in each list starts
+  // with it.
+  const ROOT_HREFS = ["/dashboard", "/hr", "/staff"];
 
   return (
     <nav

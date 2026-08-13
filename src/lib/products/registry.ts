@@ -51,7 +51,7 @@ export interface ProductDefinition {
 export const PRODUCTS: readonly ProductDefinition[] = [
   { id: 'crm', subdomain: 'crm.ootrix.com', label: 'CRM', status: 'available', path: '/dashboard' },
   { id: 'hr', subdomain: 'hr.ootrix.com', label: 'HR', status: 'available', path: '/hr' },
-  { id: 'staff', subdomain: 'staff.ootrix.com', label: 'Staff', status: 'planned' },
+  { id: 'staff', subdomain: 'staff.ootrix.com', label: 'Staff', status: 'available', path: '/staff' },
   { id: 'task', subdomain: 'task.ootrix.com', label: 'Tasks', status: 'planned' },
   { id: 'sales', subdomain: 'sales.ootrix.com', label: 'Sales', status: 'planned' },
   { id: 'marketing', subdomain: 'marketing.ootrix.com', label: 'Marketing', status: 'planned' },
