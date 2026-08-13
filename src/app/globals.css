@@ -324,23 +324,32 @@ html[data-theme="rose"] {
  * Scoped to [data-brand="ootrix"] rather than :root on purpose. The
  * marketing site and the CRM are one Next app but two visual systems —
  * the app runs the product theme (accent-swappable, light/dark), while
- * the marketing site is a fixed, always-light brand surface. Scoping
- * keeps a change to one from silently restyling the other.
+ * the marketing site is a fixed brand surface that doesn't follow the
+ * visitor's saved app theme. It is fixed *dark* — a deliberate choice
+ * for the premium, glow/spotlight aesthetic the landing page uses —
+ * not derived from the CRM's light/dark toggle.
  *
- * Values are the brand sheet verbatim; do not re-derive them.
+ * --oo-ink stays the "text on surface" role, but now resolves near-
+ * white since the surface is dark; --oo-border/-text-soft/-text-faint
+ * derive from it exactly as before, so they automatically become
+ * light-on-dark without a separate set of overrides.
  * ============================================================ */
 
 [data-brand="ootrix"] {
-  --oo-ink: #081b4b;
-  --oo-primary: #0a2f9c;
-  --oo-secondary: #1e90ff;
+  --oo-ink: #f5f7ff;
+  --oo-primary: #4c7cff;
+  --oo-secondary: #22d3ee;
   --oo-accent: #ffc107;
-  --oo-surface: #ffffff;
-  --oo-muted: #f2f4f7;
+  --oo-surface: #060814;
+  --oo-surface-2: #0d1128;
+  --oo-muted: #0a0e22;
+  /* Fixed deep navy, independent of --oo-ink, for gradient endpoints
+   * that need to stay dark even though --oo-ink is now near-white. */
+  --oo-deep: #03040a;
   /* Derived, and only these: a hairline border and two text tints that
    * stay in the ink hue instead of drifting to neutral grey. */
-  --oo-border: color-mix(in oklab, var(--oo-ink) 12%, transparent);
-  --oo-text-soft: color-mix(in oklab, var(--oo-ink) 68%, transparent);
+  --oo-border: color-mix(in oklab, var(--oo-ink) 14%, transparent);
+  --oo-text-soft: color-mix(in oklab, var(--oo-ink) 70%, transparent);
   --oo-text-faint: color-mix(in oklab, var(--oo-ink) 48%, transparent);
 }
 

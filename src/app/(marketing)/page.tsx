@@ -4,6 +4,8 @@ import Link from "next/link";
 import { motion, useMotionValueEvent, useScroll } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import {
+  AppWindow,
+  Apple,
   ArrowRight,
   BarChart3,
   Boxes,
@@ -13,14 +15,19 @@ import {
   Check,
   CircleDollarSign,
   Clock,
+  Code2,
   FolderKanban,
   GitBranch,
+  Globe,
   Headphones,
+  LayoutTemplate,
   ListChecks,
   MessageCircle,
   Phone,
   Send,
   ShieldCheck,
+  ShoppingCart,
+  Smartphone,
   Sparkles,
   Users,
   Zap,
@@ -48,6 +55,18 @@ const PRODUCTS = [
   { icon: Boxes, name: "Inventory", blurb: "Stock levels that stay honest across branches." },
   { icon: CircleDollarSign, name: "Finance", blurb: "Invoices, payments and margins, connected." },
   { icon: Building2, name: "Multi-Branch", blurb: "Run every location from a single console." },
+];
+
+// Custom development work OOTRIX builds for clients — distinct from the
+// PRODUCTS list above, which is the SaaS platform's own module set.
+const SERVICES = [
+  { icon: Globe, name: "Websites", blurb: "Marketing sites and landing pages that convert." },
+  { icon: AppWindow, name: "Web Apps", blurb: "Custom dashboards and internal tools, built to spec." },
+  { icon: Code2, name: "PHP / Custom Build", blurb: "Bespoke backends when off-the-shelf won't fit." },
+  { icon: LayoutTemplate, name: "WordPress", blurb: "Themes, plugins and full builds on WordPress." },
+  { icon: ShoppingCart, name: "E-commerce", blurb: "Storefronts with payments, catalog and checkout." },
+  { icon: Smartphone, name: "Android (APK)", blurb: "Native Android apps, packaged and distributed." },
+  { icon: Apple, name: "iOS", blurb: "Native iPhone and iPad apps for the App Store." },
 ];
 
 const INDUSTRIES = [
@@ -123,6 +142,7 @@ export default function MarketingPage() {
         <Hero />
         <TrustBar />
         <Products />
+        <Services />
         <Industries />
         <Pricing />
         <FinalCta />
@@ -142,7 +162,7 @@ function SiteNav() {
       className="sticky top-0 z-50 border-b backdrop-blur-xl"
       animate={{
         boxShadow: scrolled
-          ? "0 8px 30px -18px color-mix(in oklab, var(--oo-ink) 45%, transparent)"
+          ? "0 8px 30px -18px color-mix(in oklab, var(--oo-deep) 55%, transparent)"
           : "0 0px 0px 0px transparent",
       }}
       transition={{ duration: 0.25 }}
@@ -162,6 +182,9 @@ function SiteNav() {
         >
           <a href="#products" className="transition-opacity hover:opacity-60">
             Products
+          </a>
+          <a href="#services" className="transition-opacity hover:opacity-60">
+            Services
           </a>
           <a href="#industries" className="transition-opacity hover:opacity-60">
             Industries
@@ -315,8 +338,8 @@ function HeroVisual() {
       className="mt-16 overflow-hidden rounded-3xl border shadow-2xl"
       style={{
         borderColor: "var(--oo-border)",
-        background: "var(--oo-surface)",
-        boxShadow: "0 40px 80px -32px color-mix(in oklab, var(--oo-ink) 32%, transparent)",
+        background: "var(--oo-surface-2)",
+        boxShadow: "0 40px 80px -32px color-mix(in oklab, var(--oo-deep) 55%, transparent)",
       }}
     >
       <div
@@ -514,15 +537,15 @@ function Products() {
                 className="group h-full rounded-2xl border p-6"
                 style={{
                   borderColor: "var(--oo-border)",
-                  background: "var(--oo-surface)",
+                  background: "var(--oo-surface-2)",
                 }}
-                whileHover={{ y: -4, boxShadow: "0 20px 40px -24px color-mix(in oklab, var(--oo-ink) 30%, transparent)" }}
+                whileHover={{ y: -4, boxShadow: "0 20px 40px -24px color-mix(in oklab, var(--oo-deep) 45%, transparent)" }}
                 transition={{ type: "spring", stiffness: 300, damping: 22 }}
               >
                 <motion.div
                   className="flex size-11 items-center justify-center rounded-xl"
                   style={{
-                    background: "color-mix(in oklab, var(--oo-secondary) 12%, transparent)",
+                    background: "color-mix(in oklab, var(--oo-secondary) 20%, transparent)",
                     color: "var(--oo-primary)",
                   }}
                   whileHover={{ scale: 1.08 }}
@@ -543,6 +566,74 @@ function Products() {
             </Reveal>
           ))}
         </div>
+      </div>
+    </section>
+  );
+}
+
+function Services() {
+  return (
+    <section
+      id="services"
+      className="scroll-mt-20 border-y py-24 sm:py-28"
+      style={{ borderColor: "var(--oo-border)", background: "var(--oo-muted)" }}
+    >
+      <div className="mx-auto max-w-6xl px-5 sm:px-8">
+        <SectionHead
+          eyebrow="BEYOND THE PLATFORM"
+          title="We also build it for you"
+          body="Websites, web and mobile apps, e-commerce stores and custom software — for businesses that need something built, not just a platform to run on."
+        />
+
+        <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {SERVICES.map((service, i) => (
+            <Reveal key={service.name} delay={(i % 4) * 70}>
+              <motion.div
+                className="group h-full rounded-2xl border p-6"
+                style={{
+                  borderColor: "var(--oo-border)",
+                  background: "var(--oo-surface-2)",
+                }}
+                whileHover={{ y: -4, boxShadow: "0 20px 40px -24px color-mix(in oklab, var(--oo-deep) 45%, transparent)" }}
+                transition={{ type: "spring", stiffness: 300, damping: 22 }}
+              >
+                <motion.div
+                  className="flex size-11 items-center justify-center rounded-xl"
+                  style={{
+                    background: "color-mix(in oklab, var(--oo-accent) 20%, transparent)",
+                    color: "var(--oo-accent)",
+                  }}
+                  whileHover={{ scale: 1.08 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 18 }}
+                >
+                  <service.icon className="size-5" />
+                </motion.div>
+                <h3 className="mt-4 text-base font-semibold tracking-tight">
+                  {service.name}
+                </h3>
+                <p
+                  className="mt-1.5 text-sm leading-relaxed"
+                  style={{ color: "var(--oo-text-soft)" }}
+                >
+                  {service.blurb}
+                </p>
+              </motion.div>
+            </Reveal>
+          ))}
+        </div>
+
+        <Reveal delay={280}>
+          <div className="mt-12 text-center">
+            <a
+              href="#final-cta"
+              className="inline-flex items-center justify-center gap-2 rounded-full px-6 py-3.5 text-sm font-semibold text-white shadow-lg transition-transform hover:-translate-y-0.5"
+              style={{ background: "var(--oo-primary)" }}
+            >
+              Talk to us about your project
+              <ArrowRight className="size-4" />
+            </a>
+          </div>
+        </Reveal>
       </div>
     </section>
   );
@@ -569,7 +660,7 @@ function Industries() {
                 className="inline-flex items-center rounded-full border px-5 py-2.5 text-sm font-medium transition-transform hover:-translate-y-0.5"
                 style={{
                   borderColor: "var(--oo-border)",
-                  background: "var(--oo-surface)",
+                  background: "var(--oo-surface-2)",
                 }}
               >
                 {industry}
@@ -589,7 +680,7 @@ function Industries() {
                 className="h-full rounded-2xl border p-6"
                 style={{
                   borderColor: "var(--oo-border)",
-                  background: "var(--oo-surface)",
+                  background: "var(--oo-surface-2)",
                 }}
               >
                 <item.icon
@@ -631,7 +722,7 @@ function Pricing() {
                   borderColor: plan.featured
                     ? "var(--oo-primary)"
                     : "var(--oo-border)",
-                  background: "var(--oo-surface)",
+                  background: "var(--oo-surface-2)",
                   boxShadow: plan.featured
                     ? "0 24px 60px -28px color-mix(in oklab, var(--oo-primary) 55%, transparent)"
                     : undefined,
@@ -644,7 +735,7 @@ function Pricing() {
                     className="absolute -top-3 left-7 rounded-full px-3 py-1 text-[11px] font-bold tracking-wide"
                     style={{
                       background: "var(--oo-accent)",
-                      color: "var(--oo-ink)",
+                      color: "var(--oo-deep)",
                     }}
                   >
                     MOST POPULAR
@@ -719,12 +810,12 @@ function Pricing() {
 
 function FinalCta() {
   return (
-    <section className="px-5 pb-24 sm:px-8">
+    <section id="final-cta" className="scroll-mt-20 px-5 pb-24 sm:px-8">
       <div
         className="mx-auto max-w-6xl overflow-hidden rounded-3xl px-8 py-16 text-center sm:py-20"
         style={{
           background:
-            "linear-gradient(135deg, var(--oo-primary), var(--oo-ink))",
+            "linear-gradient(135deg, var(--oo-primary), var(--oo-deep))",
         }}
       >
         <Reveal>
@@ -777,6 +868,9 @@ function SiteFooter() {
         >
           <a href="#products" className="transition-opacity hover:opacity-60">
             Products
+          </a>
+          <a href="#services" className="transition-opacity hover:opacity-60">
+            Services
           </a>
           <a href="#industries" className="transition-opacity hover:opacity-60">
             Industries

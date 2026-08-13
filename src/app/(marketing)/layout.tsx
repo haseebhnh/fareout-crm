@@ -6,8 +6,8 @@ import type { ReactNode } from "react";
  *
  * `data-brand="ootrix"` scopes the brand tokens (see globals.css) to
  * this subtree, and the explicit background/colour below pins the page
- * light regardless of the visitor's saved app theme — the CRM is
- * theme-switchable, the brand surface is not.
+ * to the brand's fixed dark surface regardless of the visitor's saved
+ * app theme — the CRM is theme-switchable, the brand surface is not.
  */
 
 export const metadata: Metadata = {
