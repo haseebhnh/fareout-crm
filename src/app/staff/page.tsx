@@ -19,7 +19,6 @@ import {
   CalendarRange,
   GitBranch,
   Loader2,
-  MessageCircle,
   Target,
   TrendingUp,
   Users,
@@ -38,7 +37,7 @@ interface Card {
 }
 
 export default function StaffDashboardPage() {
-  const { profile, user } = useAuth();
+  const { profile } = useAuth();
   const { employeeId, loading: employeeLoading } = useMyEmployee();
   const supabase = createClient();
 
@@ -48,7 +47,6 @@ export default function StaffDashboardPage() {
   const [upcomingShifts, setUpcomingShifts] = useState(0);
   const [openGoals, setOpenGoals] = useState(0);
   const [myDeals, setMyDeals] = useState(0);
-  const [assignedChats, setAssignedChats] = useState(0);
   const [myCustomers, setMyCustomers] = useState(0);
 
   const load = useCallback(async () => {
@@ -100,16 +98,8 @@ export default function StaffDashboardPage() {
       setMyCustomers(new Set((dealContacts ?? []).map((d) => d.contact_id)).size);
     }
 
-    if (user) {
-      const { count } = await supabase
-        .from('conversations')
-        .select('id', { count: 'exact', head: true })
-        .eq('assigned_agent_id', user.id);
-      setAssignedChats(count ?? 0);
-    }
-
     setLoading(false);
-  }, [employeeId, profile, user, supabase]);
+  }, [employeeId, profile, supabase]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -166,13 +156,6 @@ export default function StaffDashboardPage() {
       icon: Users,
       value: String(myCustomers),
       sub: 'Linked to your deals',
-    },
-    {
-      href: '/staff/whatsapp',
-      label: 'WhatsApp',
-      icon: MessageCircle,
-      value: String(assignedChats),
-      sub: 'Conversations assigned to you',
     },
     {
       href: '/staff/performance',

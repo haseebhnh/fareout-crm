@@ -58,7 +58,6 @@ const pageTitles: Record<string, string> = {
   "/staff/performance": "staffPerformance",
   "/staff/deals": "staffDeals",
   "/staff/customers": "staffCustomers",
-  "/staff/whatsapp": "staffWhatsapp",
   "/staff/profile": "staffProfile",
   "/settings": "settings",
 };

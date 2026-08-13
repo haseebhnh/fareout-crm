@@ -22,7 +22,6 @@ import {
   GitBranch,
   LayoutDashboard,
   LogOut,
-  MessageCircle,
   MessageSquare,
   Radio,
   BarChart3,
@@ -148,7 +147,6 @@ const staffNavItems: NavItem[] = [
   { href: "/staff/performance", labelKey: "staffPerformance", icon: Target },
   { href: "/staff/deals", labelKey: "staffDeals", icon: GitBranch },
   { href: "/staff/customers", labelKey: "staffCustomers", icon: Users },
-  { href: "/staff/whatsapp", labelKey: "staffWhatsapp", icon: MessageCircle },
   { href: "/staff/profile", labelKey: "staffProfile", icon: UserCircle },
 ];
 
