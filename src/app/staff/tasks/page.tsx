@@ -31,6 +31,14 @@ const PRIORITY_COLOR: Record<Task['priority'], string> = {
   high: 'text-red-500',
 };
 
+function todayIso(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function isOverdue(task: Task): boolean {
+  return !!task.due_date && task.due_date < todayIso() && task.status !== 'done' && task.status !== 'cancelled';
+}
+
 export default function StaffTasksPage() {
   const { profile, profileLoading } = useAuth();
   const supabase = createClient();
@@ -93,24 +101,32 @@ export default function StaffTasksPage() {
         </div>
       ) : (
         <div className="space-y-2">
-          {[...open, ...done].map((t) => (
-            <div key={t.id} className="flex items-center gap-3 rounded-2xl border border-border p-4">
-              <Checkbox checked={t.status === 'done'} onCheckedChange={() => handleToggleDone(t)} />
-              <div className="min-w-0 flex-1">
-                <p
-                  className={`text-sm font-medium ${
-                    t.status === 'done' ? 'text-muted-foreground line-through' : 'text-foreground'
-                  }`}
-                >
-                  {t.title}
-                </p>
-                {t.due_date && <p className="text-xs text-muted-foreground">Due {t.due_date}</p>}
+          {[...open, ...done].map((t) => {
+            const overdue = isOverdue(t);
+            return (
+              <div key={t.id} className="flex items-center gap-3 rounded-2xl border border-border p-4">
+                <Checkbox checked={t.status === 'done'} onCheckedChange={() => handleToggleDone(t)} />
+                <div className="min-w-0 flex-1">
+                  <p
+                    className={`text-sm font-medium ${
+                      t.status === 'done' ? 'text-muted-foreground line-through' : 'text-foreground'
+                    }`}
+                  >
+                    {t.title}
+                  </p>
+                  {t.due_date && (
+                    <p className={`text-xs ${overdue ? 'font-medium text-red-500' : 'text-muted-foreground'}`}>
+                      Due {t.due_date}
+                      {overdue ? ' (overdue)' : ''}
+                    </p>
+                  )}
+                </div>
+                <span className={`text-xs font-medium capitalize ${PRIORITY_COLOR[t.priority]}`}>
+                  {t.priority}
+                </span>
               </div>
-              <span className={`text-xs font-medium capitalize ${PRIORITY_COLOR[t.priority]}`}>
-                {t.priority}
-              </span>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
