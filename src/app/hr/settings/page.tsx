@@ -40,6 +40,13 @@ import {
 } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   Settings as SettingsIcon,
   CalendarDays,
   Plus,
@@ -48,6 +55,10 @@ import {
   Clock3,
   Building2,
   CalendarHeart,
+  MessageCircle,
+  Mail,
+  Copy,
+  RefreshCw,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -58,6 +69,13 @@ interface LeaveType {
   requires_approval: boolean;
 }
 
+interface JobOpening {
+  id: string;
+  title: string;
+}
+
+const NO_JOB = '__none__';
+
 export default function HrSettingsPage() {
   const { accountId, canManageMembers, profileLoading } = useAuth();
   const supabase = createClient();
@@ -66,6 +84,14 @@ export default function HrSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [reminderDays, setReminderDays] = useState(30);
   const [leaveTypes, setLeaveTypes] = useState<LeaveType[]>([]);
+  const [jobOpenings, setJobOpenings] = useState<JobOpening[]>([]);
+
+  const [whatsappCvEnabled, setWhatsappCvEnabled] = useState(false);
+  const [whatsappCvJobId, setWhatsappCvJobId] = useState<string>(NO_JOB);
+  const [emailCvEnabled, setEmailCvEnabled] = useState(false);
+  const [emailCvJobId, setEmailCvJobId] = useState<string>(NO_JOB);
+  const [emailIntakeToken, setEmailIntakeToken] = useState<string | null>(null);
+  const [savingCvIntake, setSavingCvIntake] = useState(false);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState({ name: '', annual_allowance_days: 0, requires_approval: true });
@@ -73,12 +99,25 @@ export default function HrSettingsPage() {
   const load = useCallback(async () => {
     if (!accountId) return;
     setLoading(true);
-    const [settingsRes, typesRes] = await Promise.all([
-      supabase.from('hr_settings').select('document_expiry_reminder_days').eq('account_id', accountId).maybeSingle(),
+    const [settingsRes, typesRes, jobsRes] = await Promise.all([
+      supabase
+        .from('hr_settings')
+        .select(
+          'document_expiry_reminder_days, whatsapp_cv_intake_enabled, whatsapp_cv_default_job_opening_id, email_cv_intake_enabled, email_cv_default_job_opening_id, email_intake_token',
+        )
+        .eq('account_id', accountId)
+        .maybeSingle(),
       supabase.from('leave_types').select('id, name, annual_allowance_days, requires_approval').order('name'),
+      supabase.from('job_openings').select('id, title').eq('status', 'open').order('title'),
     ]);
     setReminderDays(settingsRes.data?.document_expiry_reminder_days ?? 30);
     setLeaveTypes((typesRes.data as LeaveType[]) ?? []);
+    setJobOpenings((jobsRes.data as JobOpening[]) ?? []);
+    setWhatsappCvEnabled(settingsRes.data?.whatsapp_cv_intake_enabled ?? false);
+    setWhatsappCvJobId(settingsRes.data?.whatsapp_cv_default_job_opening_id ?? NO_JOB);
+    setEmailCvEnabled(settingsRes.data?.email_cv_intake_enabled ?? false);
+    setEmailCvJobId(settingsRes.data?.email_cv_default_job_opening_id ?? NO_JOB);
+    setEmailIntakeToken(settingsRes.data?.email_intake_token ?? null);
     setLoading(false);
   }, [accountId, supabase]);
 
@@ -95,6 +134,55 @@ export default function HrSettingsPage() {
     if (error) toast.error(error.message || 'Failed to save');
     else toast.success('Saved');
     setSaving(false);
+  };
+
+  const handleSaveWhatsappCvIntake = async () => {
+    setSavingCvIntake(true);
+    const { error } = await supabase.from('hr_settings').upsert({
+      account_id: accountId,
+      whatsapp_cv_intake_enabled: whatsappCvEnabled,
+      whatsapp_cv_default_job_opening_id: whatsappCvJobId === NO_JOB ? null : whatsappCvJobId,
+    });
+    if (error) toast.error(error.message || 'Failed to save');
+    else toast.success('Saved');
+    setSavingCvIntake(false);
+  };
+
+  const handleSaveEmailCvIntake = async () => {
+    setSavingCvIntake(true);
+    const { error } = await supabase.from('hr_settings').upsert({
+      account_id: accountId,
+      email_cv_intake_enabled: emailCvEnabled,
+      email_cv_default_job_opening_id: emailCvJobId === NO_JOB ? null : emailCvJobId,
+    });
+    if (error) toast.error(error.message || 'Failed to save');
+    else toast.success('Saved');
+    setSavingCvIntake(false);
+  };
+
+  const handleGenerateEmailToken = async () => {
+    setSavingCvIntake(true);
+    const token = crypto.randomUUID();
+    const { error } = await supabase
+      .from('hr_settings')
+      .upsert({ account_id: accountId, email_intake_token: token });
+    if (error) toast.error(error.message || 'Failed to generate webhook');
+    else {
+      setEmailIntakeToken(token);
+      toast.success('Webhook URL generated');
+    }
+    setSavingCvIntake(false);
+  };
+
+  const emailWebhookUrl =
+    typeof window !== 'undefined' && emailIntakeToken
+      ? `${window.location.origin}/api/email/inbound?token=${emailIntakeToken}`
+      : null;
+
+  const handleCopyWebhookUrl = async () => {
+    if (!emailWebhookUrl) return;
+    await navigator.clipboard.writeText(emailWebhookUrl);
+    toast.success('Copied');
   };
 
   const handleCreateLeaveType = async () => {
@@ -241,6 +329,142 @@ export default function HrSettingsPage() {
               </Table>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="text-base">CV intake automation</CardTitle>
+          <CardDescription>
+            Automatically turn an incoming resume into a candidate in Recruitment. Matches by
+            phone/email against existing candidates first, so the same person applying twice
+            never gets duplicated.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="rounded-xl border border-border p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <MessageCircle className="size-4 text-muted-foreground" />
+                <Label htmlFor="cv-whatsapp" className="text-sm font-medium">
+                  WhatsApp CV intake
+                </Label>
+              </div>
+              <Switch
+                id="cv-whatsapp"
+                checked={whatsappCvEnabled}
+                onCheckedChange={setWhatsappCvEnabled}
+                disabled={savingCvIntake}
+              />
+            </div>
+            <p className="mt-1.5 text-xs text-muted-foreground">
+              When a contact sends a PDF or Word document over the connected WhatsApp number, it
+              becomes (or attaches to) a candidate automatically.
+            </p>
+            {whatsappCvEnabled && (
+              <div className="mt-3 flex items-center gap-3">
+                <Label className="shrink-0 text-xs">Default job opening</Label>
+                <Select value={whatsappCvJobId} onValueChange={(v) => setWhatsappCvJobId(v ?? NO_JOB)}>
+                  <SelectTrigger className="w-56">
+                    <SelectValue placeholder="No default — candidate only" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NO_JOB}>No default — candidate only</SelectItem>
+                    {jobOpenings.map((j) => (
+                      <SelectItem key={j.id} value={j.id}>
+                        {j.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            <Button size="sm" className="mt-3" onClick={handleSaveWhatsappCvIntake} disabled={savingCvIntake}>
+              {savingCvIntake && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Save
+            </Button>
+          </div>
+
+          <div className="rounded-xl border border-border p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Mail className="size-4 text-muted-foreground" />
+                <Label htmlFor="cv-email" className="text-sm font-medium">
+                  Email CV intake
+                </Label>
+              </div>
+              <Switch
+                id="cv-email"
+                checked={emailCvEnabled}
+                onCheckedChange={setEmailCvEnabled}
+                disabled={savingCvIntake}
+              />
+            </div>
+            <p className="mt-1.5 text-xs text-muted-foreground">
+              Forward CV emails to a webhook URL and they become candidates the same way. Works
+              with Microsoft 365 (via a Power Automate flow) or any mail-forwarding service —
+              OOTRIX can&rsquo;t register an Azure app on your tenant&rsquo;s behalf, so
+              connecting Microsoft 365 is a short setup your admin does once.
+            </p>
+            {emailCvEnabled && (
+              <>
+                <div className="mt-3 flex items-center gap-3">
+                  <Label className="shrink-0 text-xs">Default job opening</Label>
+                  <Select value={emailCvJobId} onValueChange={(v) => setEmailCvJobId(v ?? NO_JOB)}>
+                    <SelectTrigger className="w-56">
+                      <SelectValue placeholder="No default — candidate only" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={NO_JOB}>No default — candidate only</SelectItem>
+                      {jobOpenings.map((j) => (
+                        <SelectItem key={j.id} value={j.id}>
+                          {j.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="mt-4 rounded-lg bg-muted p-3">
+                  <p className="text-xs font-medium text-foreground">Webhook URL</p>
+                  {emailWebhookUrl ? (
+                    <div className="mt-1.5 flex items-center gap-2">
+                      <Input readOnly value={emailWebhookUrl} className="font-mono text-xs" />
+                      <Button variant="outline" size="icon" onClick={handleCopyWebhookUrl}>
+                        <Copy className="size-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={handleGenerateEmailToken}
+                        disabled={savingCvIntake}
+                        title="Regenerate (invalidates the old URL)"
+                      >
+                        <RefreshCw className="size-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button size="sm" className="mt-2" onClick={handleGenerateEmailToken} disabled={savingCvIntake}>
+                      Generate webhook URL
+                    </Button>
+                  )}
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Microsoft 365 setup: in Power Automate, create a flow triggered by
+                    &ldquo;When a new email arrives (V3)&rdquo;, filter to emails with
+                    attachments, then add an HTTP POST action to this URL with body{' '}
+                    <code className="rounded bg-background px-1">
+                      {'{ from, subject, attachments: [{ filename, mimeType, contentBase64 }] }'}
+                    </code>
+                    .
+                  </p>
+                </div>
+              </>
+            )}
+            <Button size="sm" className="mt-3" onClick={handleSaveEmailCvIntake} disabled={savingCvIntake}>
+              {savingCvIntake && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Save
+            </Button>
+          </div>
         </CardContent>
       </Card>
 

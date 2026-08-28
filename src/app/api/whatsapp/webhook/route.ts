@@ -19,6 +19,7 @@ import {
   handleTemplateWebhookChange,
   isTemplateWebhookField,
 } from '@/lib/whatsapp/template-webhook'
+import { ingestCv, RESUME_MIME_TYPES } from '@/lib/hr/cv-intake'
 
 // The `after()` callback in POST runs within this route's max duration.
 // Inbound processing can fan out to per-media Meta verification calls, so
@@ -726,6 +727,25 @@ async function processMessage(
     return
   }
 
+  // HR CV intake — fires only for an inbound document whose mime type
+  // looks like a resume, and only when the account has turned it on
+  // (hr_settings.whatsapp_cv_intake_enabled, 059). Awaited so it runs
+  // inside the route's after() window like everything else below, but
+  // wrapped so a failure here never breaks the rest of message
+  // processing — this is a bonus side effect of an inbound message,
+  // not the reason the webhook exists.
+  if (contentType === 'document' && message.document?.id) {
+    await maybeIngestWhatsAppCv({
+      accountId,
+      contactPhone: contactRecord.phone as string,
+      contactName,
+      documentId: message.document.id,
+      documentFilename: message.document.filename || null,
+      documentMimeType: message.document.mime_type || null,
+      accessToken,
+    }).catch((err) => console.error('[whatsapp-cv-intake] dispatch failed:', err))
+  }
+
   // Update conversation
   const { error: convError } = await supabaseAdmin()
     .from('conversations')
@@ -871,6 +891,66 @@ async function processMessage(
     content_type: contentType,
     text: contentText,
   })
+}
+
+/**
+ * Auto-creates (or attaches a CV to) an HR candidate when an inbound
+ * WhatsApp document looks like a resume. Gated on:
+ *   1. the account actually having HR enabled — a CRM-only tenant
+ *      shouldn't get HR side effects from an inbound chat document.
+ *   2. hr_settings.whatsapp_cv_intake_enabled (059) — off by default,
+ *      an admin opts in from /hr/settings.
+ *   3. the document's mime type looking like a resume (PDF/DOC/DOCX).
+ * Any miss on 1–3 is a silent no-op, not an error — most inbound
+ * documents on a WhatsApp CRM are receipts, IDs, whatever, not CVs.
+ */
+async function maybeIngestWhatsAppCv(args: {
+  accountId: string
+  contactPhone: string
+  contactName: string
+  documentId: string
+  documentFilename: string | null
+  documentMimeType: string | null
+  accessToken: string
+}) {
+  const { accountId, contactPhone, contactName, documentId, documentFilename, documentMimeType, accessToken } = args
+
+  if (!documentMimeType || !RESUME_MIME_TYPES.has(documentMimeType)) return
+
+  const { data: account } = await supabaseAdmin()
+    .from('accounts')
+    .select('enabled_products')
+    .eq('id', accountId)
+    .maybeSingle()
+  const enabledProducts = (account?.enabled_products as string[] | null) ?? []
+  if (!enabledProducts.includes('hr')) return
+
+  const { data: settings } = await supabaseAdmin()
+    .from('hr_settings')
+    .select('whatsapp_cv_intake_enabled, whatsapp_cv_default_job_opening_id')
+    .eq('account_id', accountId)
+    .maybeSingle()
+  if (!settings?.whatsapp_cv_intake_enabled) return
+
+  const { url } = await getMediaUrl({ mediaId: documentId, accessToken })
+  const { buffer, contentType } = await downloadMedia({ downloadUrl: url, accessToken })
+
+  const result = await ingestCv({
+    accountId,
+    source: 'whatsapp',
+    fullName: contactName,
+    phone: contactPhone,
+    fileBuffer: buffer,
+    fileName: documentFilename || `${contactPhone}.pdf`,
+    mimeType: contentType || documentMimeType,
+    defaultJobOpeningId: (settings.whatsapp_cv_default_job_opening_id as string | null) ?? null,
+  })
+
+  if (result) {
+    console.log(
+      `[whatsapp-cv-intake] ${result.created ? 'created' : 'updated'} candidate ${result.candidateId} from ${contactPhone}`,
+    )
+  }
 }
 
 async function parseMessageContent(
